@@ -26,13 +26,13 @@ interface WindowState {
 export const useWindowManager = create<WindowState>((set) => ({
   windows: {
     terminal: { id: 'terminal', title: 'root@sovereign:~', isOpen: true, isMaximized: false, zIndex: 10, width: 700, height: 450, x: 50, y: 50 },
-    camera: { id: 'camera', title: 'GOD-EYE // CCTV_FEED', isOpen: false, isMaximized: false, zIndex: 1, width: 800, height: 500, x: 100, y: 100 },
+    camera: { id: 'camera', title: 'GOD-EYE // CCTV_FEED', isOpen: true, isMaximized: false, zIndex: 11, width: 800, height: 500, x: 100, y: 100 },
     wifi: { id: 'wifi', title: 'WIFI_SNIFFER v2.1', isOpen: false, isMaximized: false, zIndex: 1, width: 600, height: 400, x: 150, y: 150 },
     network: { id: 'network', title: 'LOCAL_NETWORK_MAP', isOpen: false, isMaximized: false, zIndex: 1, width: 600, height: 400, x: 200, y: 200 },
     cracker: { id: 'cracker', title: 'HYDRA_FORCE // BRUTE', isOpen: false, isMaximized: false, zIndex: 1, width: 500, height: 450, x: 250, y: 250 },
     map: { id: 'map', title: 'GEO_TRACE', isOpen: false, isMaximized: false, zIndex: 1, width: 800, height: 500, x: 300, y: 300 },
   },
-  activeWindow: 'terminal',
+  activeWindow: 'camera',
   openWindow: (id) => set((state) => {
     const maxZ = Math.max(...Object.values(state.windows).map(w => w.zIndex));
     return {
