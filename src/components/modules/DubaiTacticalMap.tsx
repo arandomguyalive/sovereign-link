@@ -1,171 +1,230 @@
 'use client';
 
 import React, { useRef, useState, useMemo, useEffect, Suspense } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Text, Float, Stars, PerspectiveCamera, Html, Instances, Instance } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrbitControls, Text, Float, Stars, PerspectiveCamera, Html, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { useWindowManager } from '@/store/useWindowManager';
-import { useTerminal } from '@/store/useTerminal';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const COLORS = {
   cyan: '#00D4E5',
   pink: '#FF53B2',
   purple: '#6B0098',
   gold: '#FFD700',
+  ocean: '#0a1a2a',
   grid: '#050505',
-  danger: '#ff0000',
-  success: '#00ff00',
-  building: '#111111'
+  danger: '#ff3333',
+  text: '#ffffff'
 };
 
-// --- Procedural City Generation ---
-const CityBlock = ({ count = 40 }) => {
-  const buildings = useMemo(() => {
-    const temp = [];
-    for (let i = 0; i < count; i++) {
-      const h = Math.random() * 3 + 1;
-      const x = (Math.random() - 0.5) * 20;
-      const z = (Math.random() - 0.5) * 20;
-      if (Math.abs(x) < 2 && Math.abs(z) < 2) continue; // Clear center for Burj
-      temp.push({ position: [x, h/2, z], args: [0.5 + Math.random(), h, 0.5 + Math.random()] });
-    }
-    return temp;
-  }, [count]);
-
+// --- Ocean Simulation ---
+const Ocean = () => {
   return (
-    <group>
-      {buildings.map((b, i) => (
-        <mesh key={i} position={b.position as any}>
-          <boxGeometry args={b.args as any} />
-          <meshStandardMaterial color={COLORS.building} transparent opacity={0.8} />
-          <lineSegments>
-            <edgesGeometry args={[new THREE.BoxGeometry(...b.args)]} />
-            <lineBasicMaterial color="#222" />
-          </lineSegments>
-        </mesh>
-      ))}
-    </group>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
+      <planeGeometry args={[1000, 1000]} />
+      <meshStandardMaterial 
+        color={COLORS.ocean} 
+        metalness={0.9} 
+        roughness={0.2} 
+        transparent 
+        opacity={0.8}
+      />
+    </mesh>
   );
 };
 
-// --- Humanoid Crowd System (Low Poly) ---
-const Human = ({ position, color = COLORS.cyan }: any) => {
+// --- Procedural Lidar Humanoid ---
+const LidarHuman = ({ position, color = COLORS.cyan }: any) => {
   const group = useRef<THREE.Group>(null);
-  const [speed] = useState(0.02 + Math.random() * 0.02);
+  const [speed] = useState(0.01 + Math.random() * 0.02);
   const [offset] = useState(Math.random() * 100);
   
   useFrame((state) => {
     if (!group.current) return;
     const t = state.clock.getElapsedTime() + offset;
-    // Walk along a path
-    group.current.position.x += Math.sin(t * 0.5) * speed;
-    group.current.position.z += Math.cos(t * 0.5) * speed;
-    group.current.rotation.y = Math.atan2(Math.cos(t * 0.5), -Math.sin(t * 0.5));
-    
-    // Bobbing animation (walking)
-    group.current.position.y = Math.abs(Math.sin(t * 5)) * 0.05;
+    // Natural walking path
+    group.current.position.x += Math.sin(t * 0.3) * speed;
+    group.current.position.z += Math.cos(t * 0.3) * speed;
+    group.current.rotation.y = Math.atan2(Math.cos(t * 0.3), -Math.sin(t * 0.3));
   });
 
   return (
     <group ref={group} position={position}>
       {/* Head */}
-      <mesh position={[0, 0.35, 0]}>
-        <sphereGeometry args={[0.06, 8, 8]} />
-        <meshBasicMaterial color={color} />
+      <mesh position={[0, 1.7, 0]}>
+        <sphereGeometry args={[0.12, 8, 8]} />
+        <meshBasicMaterial color={color} wireframe />
       </mesh>
-      {/* Body */}
-      <mesh position={[0, 0.15, 0]}>
-        <cylinderGeometry args={[0.02, 0.06, 0.3, 8]} />
-        <meshBasicMaterial color={color} opacity={0.6} transparent />
+      {/* Torso */}
+      <mesh position={[0, 1.1, 0]}>
+        <cylinderGeometry args={[0.15, 0.1, 0.9, 8]} />
+        <meshBasicMaterial color={color} wireframe />
+      </mesh>
+      {/* Arms (Static for optimization) */}
+      <mesh position={[0.25, 1.1, 0]}>
+        <cylinderGeometry args={[0.04, 0.03, 0.8, 4]} />
+        <meshBasicMaterial color={color} wireframe />
+      </mesh>
+      <mesh position={[-0.25, 1.1, 0]}>
+        <cylinderGeometry args={[0.04, 0.03, 0.8, 4]} />
+        <meshBasicMaterial color={color} wireframe />
+      </mesh>
+      {/* Legs (Simulated movement via scale/pos) */}
+      <mesh position={[0.1, 0.4, 0]}>
+        <cylinderGeometry args={[0.05, 0.04, 0.9, 4]} />
+        <meshBasicMaterial color={color} wireframe />
+      </mesh>
+      <mesh position={[-0.1, 0.4, 0]}>
+        <cylinderGeometry args={[0.05, 0.04, 0.9, 4]} />
+        <meshBasicMaterial color={color} wireframe />
       </mesh>
     </group>
   );
 };
 
-const CrowdSystem = () => {
+const CrowdSystem = ({ count = 50, area = [20, 20], offset = [0, 0] }: any) => {
   return (
-    <group>
-      {[...Array(30)].map((_, i) => <Human key={`civ-${i}`} position={[(Math.random()-0.5)*10, 0, (Math.random()-0.5)*10]} color={COLORS.cyan} />)}
-      {[...Array(10)].map((_, i) => <Human key={`sec-${i}`} position={[4 + (Math.random()-0.5), 0, -4 + (Math.random()-0.5)]} color={COLORS.gold} />)}
+    <group position={[offset[0], 0, offset[1]]}>
+      {[...Array(count)].map((_, i) => (
+        <LidarHuman 
+          key={i} 
+          position={[(Math.random()-0.5)*area[0], 0, (Math.random()-0.5)*area[1]]} 
+          color={Math.random() > 0.9 ? COLORS.gold : COLORS.cyan} 
+        />
+      ))}
     </group>
   );
 };
 
-// --- Detailed Buildings ---
+// --- Mega-Structure: Burj Khalifa (Downtown Sector) ---
 const BurjKhalifa = ({ onHack }: any) => (
-  <group position={[-2, 0, -2]} onClick={() => onHack("BURJ_CORE", "SERVER")}>
-    <mesh position={[0, 4, 0]}>
-      <cylinderGeometry args={[0.1, 1.5, 8, 4]} />
-      <meshStandardMaterial color={COLORS.grid} opacity={0.9} transparent />
+  <group position={[0, 0, 0]} onClick={(e) => { e.stopPropagation(); onHack("BURJ_CORE_154", "SERVER"); }}>
+    {/* Main Spire */}
+    <mesh position={[0, 10, 0]}>
+      <cylinderGeometry args={[0.1, 2, 20, 6]} />
+      <meshStandardMaterial color="#050505" opacity={0.9} transparent />
       <lineSegments>
-        <edgesGeometry args={[new THREE.CylinderGeometry(0.1, 1.5, 8, 4)]} />
+        <edgesGeometry args={[new THREE.CylinderGeometry(0.1, 2, 20, 6)]} />
         <lineBasicMaterial color={COLORS.cyan} />
       </lineSegments>
     </mesh>
-    <Html position={[0, 6, 0]} distanceFactor={15}>
-      <div className="text-[6px] text-neon-cyan bg-black/80 px-1 border border-neon-cyan">BURJ_KHALIFA</div>
-    </Html>
+    {/* Base Wings */}
+    {[0, 120, 240].map((rot, i) => (
+      <mesh key={i} position={[0, 3, 0]} rotation={[0, rot * (Math.PI/180), 0]}>
+        <boxGeometry args={[1, 6, 1]} />
+        <meshStandardMaterial color="#111" />
+        <lineSegments>
+          <edgesGeometry args={[new THREE.BoxGeometry(1, 6, 1)]} />
+          <lineBasicMaterial color={COLORS.cyan} opacity={0.5} transparent />
+        </lineSegments>
+      </mesh>
+    ))}
+    {/* Floor 154 Indicator */}
+    <group position={[0, 15, 0]}>
+      <mesh>
+        <cylinderGeometry args={[0.3, 0.3, 0.2, 16]} />
+        <meshBasicMaterial color={COLORS.danger} transparent opacity={0.8} />
+      </mesh>
+      <Html distanceFactor={40}>
+        <div className="bg-red-950/80 border border-red-500 text-[10px] text-red-500 px-2 py-1 font-mono animate-pulse">
+          ⚠ FLOOR 154 [LOCKED]
+        </div>
+      </Html>
+    </group>
   </group>
 );
 
+// --- Mega-Structure: Palm Jumeirah (Residential Sector) ---
+const PalmJumeirah = ({ onHack }: any) => {
+  return (
+    <group position={[-40, 0, 20]} rotation={[-Math.PI / 2, 0, -0.5]} onClick={(e) => { e.stopPropagation(); onHack("PALM_GRID_MASTER", "WIFI"); }}>
+      {/* Trunk */}
+      <mesh position={[0, 0, -0.1]}>
+        <planeGeometry args={[2, 10]} />
+        <meshBasicMaterial color={COLORS.purple} wireframe opacity={0.3} transparent />
+      </mesh>
+      {/* Fronds */}
+      {[...Array(16)].map((_, i) => (
+        <group key={i} position={[0, i * 0.8 - 4, 0]}>
+          <mesh rotation={[0, 0, 0.3]} position={[3, 0, 0]}>
+            <planeGeometry args={[6, 0.2]} />
+            <meshBasicMaterial color={COLORS.purple} wireframe opacity={0.3} transparent />
+          </mesh>
+          <mesh rotation={[0, 0, -0.3]} position={[-3, 0, 0]}>
+            <planeGeometry args={[6, 0.2]} />
+            <meshBasicMaterial color={COLORS.purple} wireframe opacity={0.3} transparent />
+          </mesh>
+        </group>
+      ))}
+      {/* Crescent */}
+      <mesh position={[0, 6, 0]}>
+        <ringGeometry args={[5, 6, 32, 1, 0, Math.PI]} />
+        <meshBasicMaterial color={COLORS.purple} wireframe />
+      </mesh>
+      
+      <Html position={[0, 0, 2]} distanceFactor={60}>
+        <div className="text-xs text-purple-400 bg-black/80 px-2 border border-purple-500">PALM_JUMEIRAH_SECTOR</div>
+      </Html>
+    </group>
+  );
+};
+
+// --- Mega-Structure: Bank of Emirates (Financial Sector) ---
 const BankNBD = ({ onHack }: any) => (
-  <group position={[4, 0, -4]} onClick={() => onHack("NBD_VAULT", "BANK")}>
-    <mesh position={[0, 1.5, 0]}>
-      <boxGeometry args={[2, 3, 1]} />
-      <meshStandardMaterial color={COLORS.gold} opacity={0.2} transparent />
+  <group position={[20, 0, -10]} onClick={(e) => { e.stopPropagation(); onHack("NBD_VAULT_CORE", "BANK"); }}>
+    <mesh position={[0, 4, 0]}>
+      <boxGeometry args={[6, 8, 3]} />
+      <meshStandardMaterial color={COLORS.gold} wireframe opacity={0.1} transparent />
       <lineSegments>
-        <edgesGeometry args={[new THREE.BoxGeometry(2, 3, 1)]} />
+        <edgesGeometry args={[new THREE.BoxGeometry(6, 8, 3)]} />
         <lineBasicMaterial color={COLORS.gold} />
       </lineSegments>
     </mesh>
-    <Html position={[0, 3.5, 0]} distanceFactor={15}>
-      <div className="text-[6px] text-yellow-500 bg-black/80 px-1 border border-yellow-500 font-bold">$ NBD_HQ</div>
+    <Html position={[0, 9, 0]} distanceFactor={40}>
+      <div className="text-xs text-yellow-500 bg-black/80 px-2 border border-yellow-500 font-bold">$ NBD_FINANCIAL_HUB</div>
     </Html>
   </group>
 );
 
-const PalmJumeirah = ({ onHack }: any) => (
-  <group position={[5, -0.1, 5]} rotation={[-Math.PI/2, 0, -0.5]} onClick={() => onHack("PALM_GRID", "WIFI")}>
-    <mesh>
-      <ringGeometry args={[0.5, 4, 32]} />
-      <meshBasicMaterial color={COLORS.purple} opacity={0.1} transparent side={THREE.DoubleSide} />
-    </mesh>
-    <line>
-      <ringGeometry args={[0.5, 4, 32]} />
-      <lineBasicMaterial color={COLORS.purple} />
-    </line>
-    <Html position={[0, 0, 1]} distanceFactor={15}>
-      <div className="text-[6px] text-purple-400 bg-black/80 px-1 border border-purple-500">PALM_JUMEIRAH</div>
-    </Html>
-  </group>
-);
+// --- SIGINT Sidebar Component ---
+const SigintSidebar = () => {
+  const [logs, setLogs] = useState<string[]>([]);
 
-// --- Hacking Node ---
-const Node = ({ position, type, label, onHack }: any) => {
-  const [hovered, setHovered] = useState(false);
-  const color = type === 'WIFI' ? COLORS.cyan : (type === 'BANK' ? COLORS.gold : COLORS.danger);
-  
+  useEffect(() => {
+    const devices = ['iPhone 15 Pro', 'Samsung S24', 'MacBook Air', 'Google Pixel 9', 'Tesla Model S'];
+    const networks = ['Etisalat_5G', 'Du_Home', 'NBD_Secure', 'Burj_Guest'];
+    
+    const interval = setInterval(() => {
+      const dev = devices[Math.floor(Math.random() * devices.length)];
+      const net = networks[Math.floor(Math.random() * networks.length)];
+      const id = Math.floor(Math.random() * 9999);
+      const log = `[${new Date().toLocaleTimeString()}] DETECTED: ${dev} // ID: ${id} // NET: ${net}`;
+      
+      setLogs(prev => [log, ...prev].slice(0, 15));
+    }, 1500);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <group position={position} onClick={(e) => { e.stopPropagation(); onHack(label, type); }} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)}>
-      <mesh>
-        <sphereGeometry args={[0.1, 8, 8]} />
-        <meshBasicMaterial color={color} wireframe={!hovered} />
-      </mesh>
-      {hovered && (
-        <Html distanceFactor={10}>
-          <div className="bg-black/90 border border-white/20 p-1 text-[6px] text-white font-mono whitespace-nowrap z-50">
-            {label}<br/>
-            <span style={{ color }}>CLICK_TO_BREACH</span>
+    <div className="absolute top-20 right-4 w-64 bg-black/80 border-l-2 border-neon-cyan/50 p-2 font-mono pointer-events-none z-[1000]">
+      <div className="flex items-center justify-between mb-2 border-b border-white/10 pb-1">
+        <span className="text-[10px] text-neon-cyan font-black tracking-widest">SIGINT_MONITOR_V9</span>
+        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+      </div>
+      <div className="flex flex-col gap-1">
+        {logs.map((log, i) => (
+          <div key={i} className="text-[8px] text-white/60 truncate">
+            {i === 0 ? <span className="text-emerald-400 font-bold">{log}</span> : log}
           </div>
-        </Html>
-      )}
-    </group>
+        ))}
+      </div>
+    </div>
   );
 };
 
 export const DubaiTacticalMap = () => {
   const { openWindow, updateWindow } = useWindowManager();
-  const { addLog } = useTerminal();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -173,65 +232,59 @@ export const DubaiTacticalMap = () => {
   }, []);
 
   const handleHack = (target: string, type: string) => {
-    updateWindow('terminal', { isOpen: true });
+    updateWindow('terminal', { 
+      isOpen: true, 
+      title: `TERMINAL // BREACHING: ${target}`,
+    });
     openWindow('terminal');
-    addLog(`INITIATING BREACH SEQUENCE ON ${target}...`, 'warning');
-    addLog(`REQUIRED PROTOCOL: crack ${target} --type ${type}`, 'output');
   };
 
-  if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono">LOADING_GEO_DATA...</div>;
+  if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono">LOADING_SATELLITE_DATA...</div>;
 
   return (
     <div className="w-full h-full bg-[#020202] relative cursor-crosshair">
-      <Canvas shadows camera={{ position: [10, 10, 10], fov: 40 }}>
-        <PerspectiveCamera makeDefault position={[12, 12, 12]} fov={45} />
-        <OrbitControls enableDamping dampingFactor={0.05} maxPolarAngle={Math.PI / 2.1} minDistance={5} maxDistance={50} />
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-        <ambientLight intensity={0.3} />
-        <pointLight position={[10, 10, 10]} intensity={1} color={COLORS.cyan} />
+      <Canvas shadows camera={{ position: [30, 30, 30], fov: 60 }}>
+        <PerspectiveCamera makeDefault position={[40, 40, 40]} fov={50} />
+        <OrbitControls 
+          enableDamping 
+          dampingFactor={0.05}
+          maxPolarAngle={Math.PI / 2.1}
+          minDistance={10}
+          maxDistance={150}
+        />
         
-        {/* City Environment */}
-        <gridHelper args={[100, 50, '#222', '#050505']} position={[0, -0.1, 0]} />
-        <CityBlock count={60} />
-        <CrowdSystem />
+        <Stars radius={200} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+        <ambientLight intensity={0.4} />
+        <pointLight position={[10, 50, 10]} intensity={2} color={COLORS.cyan} />
+        
+        {/* Environment */}
+        <Ocean />
+        <gridHelper args={[200, 100, '#111', '#000']} position={[0, 0.1, 0]} />
 
-        {/* High Value Targets */}
         <group>
+          {/* Downtown Sector */}
           <BurjKhalifa onHack={handleHack} />
-          <PalmJumeirah onHack={handleHack} />
-          <BankNBD onHack={handleHack} />
-
-          {/* High Density Node Grid */}
-          {[...Array(15)].map((_, i) => (
-            <Node 
-              key={`wifi-${i}`} 
-              position={[(Math.random()-0.5)*15, 0.2, (Math.random()-0.5)*15]} 
-              type="WIFI" 
-              label={`RES_NET_${100+i}`} 
-              onHack={handleHack} 
-            />
-          ))}
-          {[...Array(10)].map((_, i) => (
-            <Node 
-              key={`cam-${i}`} 
-              position={[(Math.random()-0.5)*10, 1, (Math.random()-0.5)*10]} 
-              type="CAM" 
-              label={`STREET_CAM_${50+i}`} 
-              onHack={handleHack} 
-            />
-          ))}
+          <CrowdSystem count={40} area={[15, 15]} offset={[0, 0]} />
           
-          {/* Specific Bank Nodes */}
-          <Node position={[4.2, 0.5, -4.2]} type="BANK" label="NBD_ATM_GATEWAY" onHack={handleHack} />
-          <Node position={[3.8, 2, -3.8]} type="BANK" label="NBD_EXECUTIVE_WIFI" onHack={handleHack} />
+          {/* Palm Sector (Distant) */}
+          <PalmJumeirah onHack={handleHack} />
+          <CrowdSystem count={20} area={[10, 10]} offset={[-40, 20]} />
+
+          {/* Financial Sector */}
+          <BankNBD onHack={handleHack} />
+          <CrowdSystem count={15} area={[8, 8]} offset={[20, -10]} />
         </group>
       </Canvas>
 
+      {/* Map HUD */}
       <div className="absolute top-4 left-4 pointer-events-none font-mono">
-        <div className="text-[10px] text-neon-cyan font-black tracking-[0.3em] mb-1">DUBAI_GRID_LIVE</div>
-        <div className="text-[8px] text-white/40">SECTOR: DOWNTOWN // PALM // DIFC</div>
-        <div className="text-[8px] text-emerald-500 animate-pulse">ACTIVE_AGENTS: 42</div>
+        <div className="text-xs text-neon-cyan font-black tracking-[0.3em] mb-1">GOD_VIEW_V9.0</div>
+        <div className="text-[9px] text-white/60">SATELLITE: KH-11 [ENHANCED]</div>
+        <div className="text-[9px] text-emerald-500 animate-pulse">LIVE_FEED: ACTIVE</div>
       </div>
+
+      {/* SIGINT Sidebar */}
+      <SigintSidebar />
     </div>
   );
 };

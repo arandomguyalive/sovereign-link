@@ -69,6 +69,9 @@ export const Terminal = () => {
             } else if (target.includes('BURJ')) {
               addFile({ name: 'Floor_154_Schematics.dwg', content: '[ENCRYPTED BLUEPRINT DATA]', type: 'binary' });
               addLog('-> Floor_154_Schematics.dwg saved to /home/ghost', 'success');
+            } else if (target.includes('PALM')) {
+              addFile({ name: 'VIP_Resident_List.csv', content: 'Villa 42: Sheikh M. // Villa 09: CEO Emaar', type: 'text' });
+              addLog('-> VIP_Resident_List.csv saved to /home/ghost', 'success');
             } else {
               addFile({ name: 'User_Logs.txt', content: 'SMS: "Meet me at the Marina at 0200"', type: 'text' });
               addLog('-> User_Logs.txt saved to /home/ghost', 'success');
