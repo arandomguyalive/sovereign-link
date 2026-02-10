@@ -9,8 +9,7 @@ export async function GET() {
     // Linux command to list wifi networks in a parseable format
     const { stdout } = await execPromise('nmcli -t -f SSID,SIGNAL,SECURITY,BARS dev wifi list');
     
-    const networks = stdout.split('
-')
+    const networks = stdout.split('\n')
       .filter(line => line.trim())
       .map(line => {
         const [ssid, signal, security, bars] = line.split(':');

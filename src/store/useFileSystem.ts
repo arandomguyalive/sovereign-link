@@ -24,15 +24,15 @@ const INITIAL_FS: Record<string, FileSystemItem> = {
   '/bin': { name: 'bin', type: 'directory', children: ['nmap', 'ssh', 'aircrack', 'hydra', 'decrypt'], permissions: 'drwxr-xr-x', owner: 'root' },
   '/bin/nmap': { name: 'nmap', type: 'file', content: 'BINARY_DATA_ENCRYPTED', permissions: '-rwxr-xr-x', owner: 'root' },
   '/etc': { name: 'etc', type: 'directory', children: ['hosts', 'shadow', 'config'], permissions: 'drwxr-xr-x', owner: 'root' },
-  '/etc/hosts': { name: 'hosts', type: 'file', content: '127.0.0.1 localhost
+  '/etc/hosts': { name: 'hosts', type: 'file', content: `127.0.0.1 localhost
 192.168.1.1 gateway
-10.0.0.5 target-mainframe', permissions: '-rw-r--r--', owner: 'root' },
+10.0.0.5 target-mainframe`, permissions: '-rw-r--r--', owner: 'root' },
   '/etc/shadow': { name: 'shadow', type: 'file', content: 'root:$6$v.P/Gj8$m7...:18234:0:99999:7:::', permissions: '-rw-------', owner: 'root' },
   '/home': { name: 'home', type: 'directory', children: ['ghost'], permissions: 'drwxr-xr-x', owner: 'root' },
   '/home/ghost': { name: 'ghost', type: 'directory', children: ['notes.txt', 'targets.json'], permissions: 'drwxr-xr-x', owner: 'ghost' },
-  '/home/ghost/notes.txt': { name: 'notes.txt', type: 'file', content: 'Target confirmed: Burj Khalifa Zone 154.
+  '/home/ghost/notes.txt': { name: 'notes.txt', type: 'file', content: `Target confirmed: Burj Khalifa Zone 154.
 Encryption level: Sovereign.
-Status: Pending...', permissions: '-rw-r--r--', owner: 'ghost' },
+Status: Pending...`, permissions: '-rw-r--r--', owner: 'ghost' },
   '/logs': { name: 'logs', type: 'directory', children: ['auth.log', 'syslog'], permissions: 'drwxr-xr-x', owner: 'root' },
   '/sys': { name: 'sys', type: 'directory', children: ['kernel', 'network'], permissions: 'drwxr-xr-x', owner: 'root' },
 };
