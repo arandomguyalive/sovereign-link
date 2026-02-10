@@ -2,11 +2,10 @@
 
 import React, { useRef, useState, useMemo, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { MapControls, Stars, PerspectiveCamera, Html, Instances, Instance, Line } from '@react-three/drei';
+import { MapControls, Stars, PerspectiveCamera, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useWindowManager } from '@/store/useWindowManager';
 import { motion } from 'framer-motion';
-import { Globe, Crosshair } from 'lucide-react';
 
 const COLORS = {
   cyan: '#00D4E5',
@@ -25,16 +24,12 @@ const COLORS = {
 const PalmJumeirah = ({ onHack }: any) => {
   const palmShape = useMemo(() => {
     const shape = new THREE.Shape();
-    // Trunk
     shape.moveTo(-0.5, 0); shape.lineTo(-0.4, 4); shape.lineTo(0.4, 4); shape.lineTo(0.5, 0);
-    // Fronds
     for (let i = 0; i < 16; i++) {
       const yStart = 1 + (i / 16) * 2.5;
-      // Right
       shape.moveTo(0.4, yStart);
       shape.quadraticCurveTo(2, yStart + 0.5, 0.4 + (2.5 + Math.sin(i)*0.5), yStart + 0.2);
       shape.quadraticCurveTo(2, yStart - 0.2, 0.4, yStart - 0.1);
-      // Left
       shape.moveTo(-0.4, yStart);
       shape.quadraticCurveTo(-2, yStart + 0.5, -(0.4 + (2.5 + Math.sin(i)*0.5)), yStart + 0.2);
       shape.quadraticCurveTo(-2, yStart - 0.2, -0.4, yStart - 0.1);
@@ -55,14 +50,17 @@ const PalmJumeirah = ({ onHack }: any) => {
         <shapeGeometry args={[palmShape]} />
         <meshBasicMaterial color={COLORS.purple} transparent opacity={0.3} />
       </mesh>
-      <line>
-        <bufferGeometryFromShape shape={palmShape} />
-        <lineBasicMaterial color={COLORS.purple} />
-      </line>
-      {/* Crescent */}
+      <mesh>
+        <shapeGeometry args={[palmShape]} />
+        <meshBasicMaterial color={COLORS.purple} wireframe />
+      </mesh>
       <mesh position={[0, 0.5, 0]}>
         <shapeGeometry args={[crescentShape]} />
         <meshBasicMaterial color={COLORS.purple} transparent opacity={0.3} />
+      </mesh>
+      <mesh position={[0, 0.5, 0]}>
+        <shapeGeometry args={[crescentShape]} />
+        <meshBasicMaterial color={COLORS.purple} wireframe />
       </mesh>
       <Html position={[0, 2, 1]} distanceFactor={60}>
         <div className="text-[8px] text-purple-400 bg-black/80 px-1 border border-purple-500 font-mono">PALM_SECTOR</div>
@@ -144,10 +142,8 @@ const BankNBD = ({ onHack }: any) => (
   </group>
 );
 
-// --- Traffic System (Moving Lights) ---
 const TrafficStream = ({ path, color, count = 20, speed = 0.1 }: any) => {
   const [offsets] = useState(() => Array.from({ length: count }, () => Math.random()));
-  
   return (
     <group>
       {offsets.map((offset, i) => (
@@ -173,7 +169,6 @@ const Vehicle = ({ path, color, offset, speed }: any) => {
   );
 };
 
-// --- Parabolic Grid / Ocean ---
 const ParabolicGrid = () => (
   <group position={[0, -0.5, 0]}>
     <mesh rotation={[-Math.PI / 2, 0, 0]}>
@@ -187,12 +182,10 @@ const ParabolicGrid = () => (
   </group>
 );
 
-// --- Heatmap Humanoid ---
 const SatelliteHuman = ({ position }: any) => {
   const group = useRef<THREE.Group>(null);
   const [speed] = useState(0.01 + Math.random() * 0.02);
   const [offset] = useState(Math.random() * 100);
-  
   useFrame((state) => {
     if (!group.current) return;
     const t = state.clock.getElapsedTime() + offset;
@@ -200,7 +193,6 @@ const SatelliteHuman = ({ position }: any) => {
     group.current.position.z += Math.cos(t * 0.3) * speed;
     group.current.rotation.y = Math.atan2(Math.cos(t * 0.3), -Math.sin(t * 0.3));
   });
-
   return (
     <group ref={group} position={position}>
       <mesh position={[0, 0.9, 0]}>
@@ -223,11 +215,9 @@ const CrowdSystem = ({ count = 50, area = [20, 20], center = [0, 0] }: any) => (
   </group>
 );
 
-// --- Interactive Nodes ---
 const Node = ({ position, type, label, onHack }: any) => {
   const [hovered, setHovered] = useState(false);
   const color = type === 'WIFI' ? COLORS.cyan : COLORS.danger;
-  
   return (
     <group position={position} onClick={(e) => { e.stopPropagation(); onHack(label, type); }} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)}>
       <mesh>
@@ -249,25 +239,18 @@ const Node = ({ position, type, label, onHack }: any) => {
 export const DubaiTacticalMap = () => {
   const { openWindow, updateWindow } = useWindowManager();
   const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
+  useEffect(() => { setMounted(true); }, []);
   const handleHack = (target: string, type: string) => {
     updateWindow('terminal', { isOpen: true, title: `TERMINAL // TARGET: ${target}` });
     openWindow('terminal');
   };
-
-  // Highway Path
   const highwayPath = useMemo(() => {
-    const curve = new THREE.CatmullRomCurve3([
+    return new THREE.CatmullRomCurve3([
       new THREE.Vector3(-40, 0, 20),
       new THREE.Vector3(-10, 0, 10),
       new THREE.Vector3(20, 0, -20),
       new THREE.Vector3(50, 0, -30),
     ]);
-    return curve;
   }, []);
 
   if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono">SAT_LINK_INIT...</div>;
@@ -276,49 +259,26 @@ export const DubaiTacticalMap = () => {
     <div className="w-full h-full bg-[#020202] relative cursor-crosshair">
       <Canvas shadows camera={{ position: [0, 60, 60], fov: 45 }}>
         <PerspectiveCamera makeDefault position={[0, 80, 80]} fov={40} />
-        <MapControls 
-          enableDamping 
-          dampingFactor={0.05} 
-          minDistance={5} 
-          maxDistance={200}
-          maxPolarAngle={Math.PI / 2.1}
-        />
+        <MapControls enableDamping dampingFactor={0.05} minDistance={5} maxDistance={200} maxPolarAngle={Math.PI / 2.1} />
         <Stars radius={200} depth={50} count={8000} factor={4} saturation={0} fade />
         <ambientLight intensity={0.2} />
         <pointLight position={[10, 50, 10]} intensity={1.5} color={COLORS.cyan} />
-
         <ParabolicGrid />
-        
-        {/* Buildings */}
         <BurjKhalifa onHack={handleHack} />
         <BurjAlArab onHack={handleHack} />
         <PalmJumeirah onHack={handleHack} />
         <BankNBD onHack={handleHack} />
-
-        {/* Traffic */}
         <TrafficStream path={highwayPath} color={COLORS.traffic_white} count={30} speed={0.05} />
         <TrafficStream path={highwayPath} color={COLORS.traffic_red} count={30} speed={0.04} />
-
-        {/* Crowds */}
-        <CrowdSystem count={40} area={[15, 15]} center={[20, -20]} /> {/* Downtown */}
-        <CrowdSystem count={20} area={[10, 10]} center={[-30, 15]} /> {/* Palm */}
-
-        {/* High Density Nodes */}
+        <CrowdSystem count={40} area={[15, 15]} center={[20, -20]} />
+        <CrowdSystem count={20} area={[10, 10]} center={[-30, 15]} />
         {[...Array(20)].map((_, i) => (
           <Node key={i} position={[(Math.random()-0.5)*60, 1, (Math.random()-0.5)*60]} type="WIFI" label={`WIFI_NODE_${i}`} onHack={handleHack} />
         ))}
       </Canvas>
-
-      {/* Overlays */}
       <div className="absolute top-4 left-4 pointer-events-none font-mono">
-        <div className="text-xs text-neon-cyan font-black tracking-[0.3em] mb-1">APEX_GRID_V12</div>
+        <div className="text-xs text-neon-cyan font-black tracking-[0.3em] mb-1 border-b border-neon-cyan/30 pb-1">APEX_GRID_V12</div>
         <div className="text-[9px] text-white/60">TARGET: DUBAI // GEOSPATIAL_TWIN</div>
-      </div>
-      <div className="absolute top-20 right-4 w-48 bg-black/80 border-l-2 border-neon-cyan/50 p-2 font-mono pointer-events-none">
-        <div className="text-[10px] text-neon-cyan font-black tracking-widest mb-2">LIVE_SIGINT</div>
-        <div className="text-[8px] text-emerald-400">DETECTED: iPhone 15 // IMEI: 9938</div>
-        <div className="text-[8px] text-white/60">DETECTED: Samsung S24 // MAC: AF:33</div>
-        <div className="text-[8px] text-white/60">NET: Etisalat_5G // STR: 98%</div>
       </div>
     </div>
   );
