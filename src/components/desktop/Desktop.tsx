@@ -29,6 +29,8 @@ export const Desktop = () => {
   const { traceLevel } = useTerminal();
   const [isBooting, setIsBooting] = useState(true);
   const [bootStep, setBootStep] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  const [time, setTime] = useState('');
 
   const bootLogs = [
     'INITIALIZING SOVEREIGN-OS v4.2.0-STABLE...',
@@ -41,6 +43,11 @@ export const Desktop = () => {
   ];
 
   useEffect(() => {
+    setMounted(true);
+    const timer = setInterval(() => {
+      setTime(new Date().toLocaleTimeString());
+    }, 1000);
+
     if (isBooting) {
       const interval = setInterval(() => {
         setBootStep(prev => {
@@ -52,8 +59,12 @@ export const Desktop = () => {
           return prev + 1;
         });
       }, 300);
-      return () => clearInterval(interval);
+      return () => {
+        clearInterval(interval);
+        clearInterval(timer);
+      }
     }
+    return () => clearInterval(timer);
   }, [isBooting]);
 
   const icons: { id: AppId; icon: any; label: string }[] = [
@@ -64,6 +75,8 @@ export const Desktop = () => {
     { id: 'cracker', icon: Shield, label: 'Hydra' },
     { id: 'map', icon: Map, label: 'GeoTrace' },
   ];
+
+  if (!mounted) return <div className="fixed inset-0 bg-black" />;
 
   if (isBooting) {
     return (
@@ -156,7 +169,7 @@ export const Desktop = () => {
             <Zap size={14} className="text-neon-orange" />
             <span className="text-[10px] text-white/60 font-black uppercase tracking-widest">98.4%</span>
           </div>
-          <span className="text-[11px] text-white font-black tracking-tighter">{new Date().toLocaleTimeString()}</span>
+          <span className="text-[11px] text-white font-black tracking-tighter">{time}</span>
         </div>
       </div>
 
