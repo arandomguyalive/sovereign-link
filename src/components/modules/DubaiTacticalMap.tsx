@@ -13,6 +13,7 @@ const COLORS = {
   cyan: '#00F0FF', // Cyber Cyan
   blue: '#0066FF',
   pink: '#FF0055',
+  purple: '#6B0098',
   gold: '#FFD700',
   danger: '#FF3333',
   grid: '#0a1a2a',
