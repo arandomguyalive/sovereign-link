@@ -1,178 +1,251 @@
 'use client';
 
-import React, { useRef, useState, useMemo, useEffect, Suspense } from 'react';
+import React, { useRef, useState, useMemo, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Text, Float, Stars, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, Text, Float, Stars, PerspectiveCamera, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useWindowManager } from '@/store/useWindowManager';
 
 const COLORS = {
   cyan: '#00D4E5',
   pink: '#FF53B2',
   purple: '#6B0098',
-  grid: '#111111',
+  gold: '#FFD700',
+  grid: '#0a0a0a',
+  danger: '#ff0000',
+  success: '#00ff00'
 };
 
-const BurjKhalifa = () => {
-  const sections = [
-    { radius: 1.5, height: 2, y: 1 },
-    { radius: 1.2, height: 2, y: 3 },
-    { radius: 0.9, height: 2, y: 5 },
-    { radius: 0.6, height: 2, y: 7 },
-    { radius: 0.3, height: 3, y: 9 },
-    { radius: 0.05, height: 4, y: 12 },
-  ];
+// --- Procedural Palm Jumeirah Geometry ---
+const PalmJumeirah = () => {
+  const palmShape = useMemo(() => {
+    const shape = new THREE.Shape();
+    
+    // Trunk
+    shape.moveTo(-0.5, 0);
+    shape.lineTo(-0.4, 4);
+    shape.lineTo(0.4, 4);
+    shape.lineTo(0.5, 0);
+    
+    // Fronds (Procedural generation)
+    for (let i = 0; i < 16; i++) {
+      const angle = (i / 15) * Math.PI * 0.8 + 0.1 * Math.PI; // Spread like a fan
+      const length = 2.5 + Math.sin(i * 0.5) * 0.5; // Varying lengths
+      const yStart = 1 + (i / 16) * 2.5;
+      
+      // Right side fronds
+      shape.moveTo(0.4, yStart);
+      shape.quadraticCurveTo(2, yStart + 0.5, 0.4 + length, yStart + 0.2);
+      shape.quadraticCurveTo(2, yStart - 0.2, 0.4, yStart - 0.1);
+
+      // Left side fronds (mirror)
+      shape.moveTo(-0.4, yStart);
+      shape.quadraticCurveTo(-2, yStart + 0.5, -(0.4 + length), yStart + 0.2);
+      shape.quadraticCurveTo(-2, yStart - 0.2, -0.4, yStart - 0.1);
+    }
+
+    return shape;
+  }, []);
+
+  const crescentShape = useMemo(() => {
+    const shape = new THREE.Shape();
+    shape.absarc(0, 4.5, 4.5, 0, Math.PI, false); // Outer arc
+    shape.absarc(0, 4.5, 4.0, Math.PI, 0, true);  // Inner arc
+    return shape;
+  }, []);
 
   return (
-    <group>
-      {sections.map((s, i) => (
-        <mesh key={i} position={[0, s.y, 0]}>
-          <cylinderGeometry args={[s.radius * 0.8, s.radius, s.height, 6]} />
-          <meshBasicMaterial color={COLORS.cyan} wireframe opacity={0.3} transparent />
+    <group position={[5, -0.5, 5]} rotation={[-Math.PI / 2, 0, -0.5]}>
+      {/* Glow Effect */}
+      <mesh position={[0, 0, -0.1]}>
+        <shapeGeometry args={[palmShape]} />
+        <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.1} />
+      </mesh>
+      {/* Wireframe Structure */}
+      <line>
+        <bufferGeometryFromShape shape={palmShape} />
+        <lineBasicMaterial color={COLORS.cyan} />
+      </line>
+      
+      {/* Crescent */}
+      <group position={[0, 0.5, 0]}>
+         <mesh>
+          <shapeGeometry args={[crescentShape]} />
+          <meshBasicMaterial color={COLORS.purple} transparent opacity={0.2} />
+        </mesh>
+        <line>
+          <bufferGeometryFromShape shape={crescentShape} />
+          <lineBasicMaterial color={COLORS.purple} />
+        </line>
+      </group>
+    </group>
+  );
+};
+
+// --- Detailed Burj Khalifa with Interactive Floors ---
+const BurjKhalifa = ({ onHack }: { onHack: (target: string, type: string) => void }) => {
+  return (
+    <group position={[-2, 0, -2]}>
+      {/* Base */}
+      <mesh position={[0, 1, 0]}>
+        <cylinderGeometry args={[1.5, 2, 2, 3]} />
+        <meshStandardMaterial color="#111" wireframe />
+      </mesh>
+      
+      {/* Tiers */}
+      {[...Array(8)].map((_, i) => (
+        <mesh key={i} position={[0, 2 + i * 1.5, 0]}>
+          <cylinderGeometry args={[1.5 - (i * 0.15), 1.5 - (i * 0.15), 1.5, 3]} />
+          <meshStandardMaterial color="#050505" transparent opacity={0.8} />
+          <lineSegments>
+            <edgesGeometry args={[new THREE.CylinderGeometry(1.5 - (i * 0.15), 1.5 - (i * 0.15), 1.5, 3)]} />
+            <lineBasicMaterial color={COLORS.cyan} opacity={0.3} transparent />
+          </lineSegments>
         </mesh>
       ))}
-      <mesh position={[0, 10, 0]}>
-        <cylinderGeometry args={[0.25, 0.25, 0.1, 16]} />
-        <meshBasicMaterial color={COLORS.pink} />
-        <pointLight color={COLORS.pink} intensity={2} distance={5} />
+
+      {/* Interactive Floor 154 (Server Room) */}
+      <group position={[0, 10, 0]} onClick={() => onHack("BURJ_SERVER_154", "SERVER")}>
+        <mesh>
+          <cylinderGeometry args={[0.6, 0.6, 0.2, 16]} />
+          <meshBasicMaterial color={COLORS.danger} transparent opacity={0.6} />
+        </mesh>
+        <Html distanceFactor={15}>
+          <div className="bg-black/80 border border-red-500 text-[8px] text-red-500 px-1 py-0.5 font-mono whitespace-nowrap animate-pulse cursor-pointer hover:bg-red-900/50">
+            ⚠ FLOOR 154 // RESTRICTED
+          </div>
+        </Html>
+      </group>
+
+      {/* Spire */}
+      <mesh position={[0, 16, 0]}>
+        <cylinderGeometry args={[0.05, 0.4, 5, 4]} />
+        <meshBasicMaterial color={COLORS.cyan} />
       </mesh>
     </group>
   );
 };
 
-const PalmJumeirah = () => {
+// --- Bank of Emirates (NBD) ---
+const BankNBD = ({ onHack }: { onHack: (target: string, type: string) => void }) => {
   return (
-    <group position={[0, -0.5, 5]} rotation={[-Math.PI / 2, 0, 0]}>
-      <mesh position={[0, 2.5, 0]}>
-        <planeGeometry args={[1, 5]} />
-        <meshBasicMaterial color={COLORS.cyan} wireframe opacity={0.2} transparent />
+    <group position={[4, 0, -4]} onClick={() => onHack("NBD_MAIN_VAULT", "BANK")}>
+      <mesh position={[0, 2, 0]}>
+        <boxGeometry args={[2, 4, 1]} />
+        <meshStandardMaterial color="#0a0a0a" />
+        <lineSegments>
+          <edgesGeometry args={[new THREE.BoxGeometry(2, 4, 1)]} />
+          <lineBasicMaterial color={COLORS.gold} />
+        </lineSegments>
       </mesh>
-      {[...Array(8)].map((_, i) => (
-        <group key={i} position={[0, i * 0.6 + 1, 0]}>
-          <mesh rotation={[0, 0, Math.PI / 4]} position={[1.5, 0, 0]}>
-            <planeGeometry args={[3, 0.1]} />
-            <meshBasicMaterial color={COLORS.cyan} wireframe opacity={0.2} transparent />
-          </mesh>
-          <mesh rotation={[0, 0, -Math.PI / 4]} position={[-1.5, 0, 0]}>
-            <planeGeometry args={[3, 0.1]} />
-            <meshBasicMaterial color={COLORS.cyan} wireframe opacity={0.2} transparent />
-          </mesh>
-        </group>
-      ))}
+      <Html position={[0, 4.5, 0]} distanceFactor={15}>
+        <div className="bg-black/80 border border-yellow-500 text-[8px] text-yellow-500 px-1 py-0.5 font-mono whitespace-nowrap">
+          $ NBD_CORE_VAULT
+        </div>
+      </Html>
     </group>
   );
 };
 
-const HackingNode = ({ position, type, label, onHack }: any) => {
+// --- Interactive Node (Camera/WiFi) ---
+const Node = ({ position, type, label, onHack }: any) => {
   const [hovered, setHovered] = useState(false);
-  const [hacked, setHacked] = useState(false);
-
+  
   return (
-    <group position={position}>
-      <mesh 
-        onPointerOver={() => setHovered(true)} 
-        onPointerOut={() => setHovered(false)}
-        onClick={() => {
-          if (!hacked) onHack(label);
-          setHacked(true);
-        }}
-      >
-        <sphereGeometry args={[0.15, 16, 16]} />
-        <meshBasicMaterial color={hacked ? '#10b981' : (hovered ? COLORS.pink : (type === 'WIFI' ? '#3b82f6' : COLORS.pink))} />
+    <group position={position} onClick={() => onHack(label, type)} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)}>
+      <mesh>
+        <sphereGeometry args={[0.2, 8, 8]} />
+        <meshBasicMaterial color={type === 'WIFI' ? COLORS.cyan : COLORS.danger} wireframe={!hovered} />
       </mesh>
-      {(hovered || hacked) && (
-        <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-          <Text position={[0, 0.4, 0]} fontSize={0.15} color="white">
-            {`${label}\n${hacked ? '[ACCESS GRANTED]' : '[LOCKED]'}`}
-          </Text>
-        </Float>
+      {hovered && (
+        <Html distanceFactor={10}>
+          <div className="bg-black/90 border border-white/20 p-1 text-[8px] text-white font-mono whitespace-nowrap z-50">
+            {label} <br/>
+            <span className="text-emerald-400">CLICK TO HACK</span>
+          </div>
+        </Html>
       )}
-      <mesh scale={hovered ? 1.5 : 1}>
-        <sphereGeometry args={[0.2, 16, 16]} />
-        <meshBasicMaterial color={hacked ? '#10b981' : COLORS.cyan} wireframe opacity={0.1} transparent />
-      </mesh>
+      <pointLight distance={2} intensity={2} color={type === 'WIFI' ? COLORS.cyan : COLORS.danger} />
     </group>
-  );
-};
-
-const CrowdSim = () => {
-  const count = 100;
-  const mesh = useRef<THREE.InstancedMesh>(null);
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-  const particles = useMemo(() => {
-    const temp = [];
-    for (let i = 0; i < count; i++) {
-      temp.push({ t: Math.random() * 100, speed: 0.01 + Math.random() / 200, radius: 2 + Math.random() * 8 });
-    }
-    return temp;
-  }, [count]);
-
-  useFrame(() => {
-    if (!mesh.current) return;
-    particles.forEach((p, i) => {
-      p.t += p.speed;
-      dummy.position.set(Math.cos(p.t) * p.radius, 0, Math.sin(p.t) * p.radius);
-      dummy.scale.set(0.05, 0.05, 0.05);
-      dummy.updateMatrix();
-      mesh.current!.setMatrixAt(i, dummy.matrix);
-    });
-    mesh.current.instanceMatrix.needsUpdate = true;
-  });
-
-  return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, count]}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.4} />
-    </instancedMesh>
   );
 };
 
 export const DubaiTacticalMap = () => {
-  const [lastHack, setLastHack] = useState<string | null>(null);
+  const { openWindow, updateWindow } = useWindowManager();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) return <div className="w-full h-full bg-black" />;
+  const handleHack = (target: string, type: string) => {
+    // Open a dedicated terminal for this hack
+    updateWindow('terminal', { 
+      isOpen: true, 
+      title: `TERMINAL // HACKING: ${target}`,
+      // Pass initial command to terminal via some state or just let user type (simulated here by title)
+    });
+    openWindow('terminal');
+    
+    // Simulate "Target Lock" sound or effect here
+    console.log(`Locking on target: ${target}`);
+  };
+
+  if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono">INITIALIZING_HOLO_GRID...</div>;
 
   return (
-    <div className="w-full h-full bg-[#020202] relative cursor-crosshair pointer-events-auto">
-      <Suspense fallback={<div className="flex items-center justify-center h-full text-neon-cyan animate-pulse font-mono text-xs">INITIALIZING_3D_GRID...</div>}>
-        <Canvas shadows camera={{ position: [10, 10, 15], fov: 50 }}>
-          <OrbitControls 
-            enableDamping 
-            dampingFactor={0.05}
-            maxPolarAngle={Math.PI / 2.1}
-            minDistance={5}
-            maxDistance={30}
-          />
-          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-          <ambientLight intensity={0.4} />
-          <pointLight position={[10, 10, 10]} intensity={1.5} color={COLORS.cyan} />
-          <gridHelper args={[100, 50, COLORS.purple, COLORS.grid]} position={[0, -0.1, 0]} />
-          <group>
-            <BurjKhalifa />
-            <PalmJumeirah />
-            <CrowdSim />
-            <HackingNode position={[0, 10, 0]} type="SERVER" label="BURJ_CORE_154" onHack={setLastHack} />
-            <HackingNode position={[2, 0, 6]} type="WIFI" label="PALM_RES_WIFI_08" onHack={setLastHack} />
-            <HackingNode position={[-2, 0, 8]} type="CAM" label="JBR_SURVEILLANCE_04" onHack={setLastHack} />
-            <HackingNode position={[4, 0, 4]} type="WIFI" label="DUBAI_MALL_GUEST" onHack={setLastHack} />
-          </group>
-        </Canvas>
-      </Suspense>
+    <div className="w-full h-full bg-[#020202] relative cursor-crosshair">
+      <Canvas shadows camera={{ position: [8, 8, 8], fov: 45 }}>
+        <PerspectiveCamera makeDefault position={[10, 12, 10]} fov={50} />
+        <OrbitControls 
+          enableDamping 
+          dampingFactor={0.05}
+          maxPolarAngle={Math.PI / 2.1}
+          minDistance={5}
+          maxDistance={40}
+          autoRotate
+          autoRotateSpeed={0.5}
+        />
+        
+        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+        <ambientLight intensity={0.2} />
+        <pointLight position={[10, 10, 10]} intensity={1.5} color={COLORS.cyan} />
 
+        {/* Cyber Grid Floor */}
+        <gridHelper args={[100, 50, COLORS.purple, 0x000000]} position={[0, -0.1, 0]} />
+        
+        <group>
+          <BurjKhalifa onHack={handleHack} />
+          <PalmJumeirah />
+          <BankNBD onHack={handleHack} />
+
+          {/* Scattered Nodes on Palm */}
+          <Node position={[6, 0, 6]} type="WIFI" label="PALM_VILLA_42_WIFI" onHack={handleHack} />
+          <Node position={[4, 0, 7]} type="CAM" label="PALM_STREET_CAM_09" onHack={handleHack} />
+          <Node position={[7, 0, 4]} type="WIFI" label="ATLANTIS_GUEST_NET" onHack={handleHack} />
+          
+          {/* Downtown Nodes */}
+          <Node position={[-3, 0, -1]} type="CAM" label="DUBAI_MALL_ENTRANCE" onHack={handleHack} />
+          <Node position={[-1, 0, -3]} type="WIFI" label="EMAAR_CORP_NET" onHack={handleHack} />
+        </group>
+      </Canvas>
+
+      {/* HUD */}
       <div className="absolute top-4 left-4 pointer-events-none font-mono">
-        <div className="text-[10px] text-neon-cyan font-black tracking-[0.5em] mb-1">TACTICAL_MAP_V1.0</div>
-        <div className="text-[8px] text-white/40 uppercase">Region: Dubai Central Hub</div>
-        {lastHack && (
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mt-4 bg-emerald-500/10 border-l-2 border-emerald-500 p-2">
-            <div className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Uplink_Established</div>
-            <div className="text-[8px] text-white/60 uppercase">Node: {lastHack}</div>
-          </motion.div>
-        )}
+        <div className="text-xs text-neon-cyan font-black tracking-[0.3em] mb-1 border-b border-neon-cyan/30 pb-1">DUBAI_GRID_V7.0</div>
+        <div className="text-[9px] text-white/60">SECTOR: DOWNTOWN & PALM</div>
+        <div className="text-[9px] text-white/60">NODES_ACTIVE: 142</div>
+      </div>
+      
+      <div className="absolute bottom-4 right-4 pointer-events-none font-mono text-right">
+        <div className="flex flex-col items-end gap-1">
+           <div className="flex items-center gap-2">
+             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+             <span className="text-[9px] text-red-500 font-bold">LIVE_TRACKING</span>
+           </div>
+           <div className="text-[8px] text-white/30">SAT_LINK: CONNECTED</div>
+        </div>
       </div>
     </div>
   );
