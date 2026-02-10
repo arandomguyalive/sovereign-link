@@ -106,16 +106,18 @@ export const Window: React.FC<WindowProps> = ({ id, title, children }) => {
       {/* Resize Handles */}
       <div 
         onMouseDown={(e) => handleResize(e, 'e')}
-        className="absolute top-0 right-0 w-1 h-full cursor-ew-resize hover:bg-neon-cyan/30 transition-colors"
+        className="absolute top-0 right-0 w-2 h-full cursor-ew-resize hover:bg-neon-cyan/20 transition-colors z-[100]"
       />
       <div 
         onMouseDown={(e) => handleResize(e, 's')}
-        className="absolute bottom-0 left-0 w-full h-1 cursor-ns-resize hover:bg-neon-cyan/30 transition-colors"
+        className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize hover:bg-neon-cyan/20 transition-colors z-[100]"
       />
       <div 
         onMouseDown={(e) => handleResize(e, 'se')}
-        className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize hover:bg-neon-cyan/50 bg-neon-cyan/10 rounded-tl-full"
-      />
+        className="absolute bottom-0 right-0 w-5 h-5 cursor-nwse-resize hover:bg-neon-cyan/40 bg-neon-cyan/5 rounded-tl-xl flex items-end justify-end p-0.5 z-[110] border-r-2 border-b-2 border-neon-cyan/30"
+      >
+        <div className="w-2 h-2 border-r border-b border-neon-cyan/60" />
+      </div>
     </motion.div>
   );
 };
