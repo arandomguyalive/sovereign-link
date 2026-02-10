@@ -4,11 +4,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTerminal } from '@/store/useTerminal';
 import { useFileSystem } from '@/store/useFileSystem';
 import { useWindowManager } from '@/store/useWindowManager';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export const Terminal = () => {
   const [input, setInput] = useState('');
-  const { history, addLog, clearHistory, traceLevel, incrementTrace } = useTerminal();
+  const { history, addLog, clearHistory, traceLevel, incrementTrace, addFile } = useTerminal();
   const { currentPath, cd, fs } = useFileSystem();
   const { openWindow } = useWindowManager();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -36,16 +35,49 @@ export const Terminal = () => {
   const processCommand = (cmd: string, args: string[]) => {
     switch (cmd.toLowerCase()) {
       case 'help':
-        addLog('AVAILABLE COMMANDS:', 'success');
-        addLog('  ls             List directory contents');
-        addLog('  cd [dir]       Change directory');
-        addLog('  cat [file]     Read file content');
-        addLog('  clear          Clear terminal history');
-        addLog('  scan           Scan for local networks and devices');
-        addLog('  wifi           Launch WiFi interceptor');
-        addLog('  camera         Access global CCTV feeds');
-        addLog('  exploit        Launch vulnerability exploitation module');
-        addLog('  whoami         Display current user info');
+        addLog('AVAILABLE PROTOCOLS:', 'info');
+        addLog('  crack [TARGET] [TYPE]   Initiate breach sequence (e.g., crack NBD_VAULT BANK)', 'success');
+        addLog('  scan                    Global SIGINT discovery', 'success');
+        addLog('  ls                      List directory contents');
+        addLog('  cd [dir]                Change directory');
+        addLog('  cat [file]              Read file content');
+        addLog('  clear                   Clear terminal history');
+        addLog('  whoami                  Display current user info');
+        break;
+
+      case 'crack':
+        if (!args[0]) {
+          addLog('Usage: crack [TARGET_ID] [TYPE]', 'error');
+          break;
+        }
+        const target = args[0];
+        const type = args[1] || 'UNKNOWN';
+        
+        incrementTrace(15);
+        addLog(`[+] TARGET ACQUIRED: ${target}`, 'warning');
+        addLog(`[+] INJECTING PAYLOAD (${type})...`, 'warning');
+        
+        setTimeout(() => {
+          if (Math.random() > 0.3) {
+            addLog(`[SUCCESS] ROOT ACCESS GRANTED to ${target}`, 'success');
+            addLog(`[DATA] Downloading secure files...`, 'info');
+            
+            // Simulate loot drop
+            if (target.includes('NBD')) {
+              addFile({ name: 'NBD_Ledger_2026.xlsx', content: 'ACCOUNT #99283: $42,000,000 (FROZEN)', type: 'text' });
+              addLog('-> NBD_Ledger_2026.xlsx saved to /home/ghost', 'success');
+            } else if (target.includes('BURJ')) {
+              addFile({ name: 'Floor_154_Schematics.dwg', content: '[ENCRYPTED BLUEPRINT DATA]', type: 'binary' });
+              addLog('-> Floor_154_Schematics.dwg saved to /home/ghost', 'success');
+            } else {
+              addFile({ name: 'User_Logs.txt', content: 'SMS: "Meet me at the Marina at 0200"', type: 'text' });
+              addLog('-> User_Logs.txt saved to /home/ghost', 'success');
+            }
+          } else {
+            addLog(`[FAILURE] FIREWALL DETECTED. TRACE INCREASED.`, 'error');
+            incrementTrace(20);
+          }
+        }, 2000);
         break;
 
       case 'ls':
@@ -82,41 +114,17 @@ export const Terminal = () => {
         break;
 
       case 'scan':
-        addLog('Initializing deep network scan...', 'warning');
+        addLog('INITIALIZING GLOBAL SIGINT...', 'warning');
         setTimeout(() => {
-          addLog('FOUND: 192.168.1.1 (Gateway)', 'success');
-          addLog('FOUND: 192.168.1.12 (SmartTV-LG)', 'success');
-          addLog('FOUND: 192.168.1.45 (iPhone-Sovereign)', 'success');
-          addLog('FOUND: 192.168.1.102 (IOT-CAM-04)', 'warning');
-          openWindow('network');
-        }, 1500);
-        break;
-
-      case 'camera':
-        addLog('Connecting to God-Eye Satellite Uplink...', 'warning');
-        setTimeout(() => {
-          addLog('Uplink Synchronized. Visuals enabled.', 'success');
-          openWindow('camera');
+          addLog('FOUND: DUBAI_MALL_GUEST (Open)', 'success');
+          addLog('FOUND: NBD_SECURE_NET (WPA3)', 'error');
+          addLog('FOUND: PALM_RES_09 (Weak)', 'warning');
+          openWindow('wifi');
         }, 1000);
         break;
 
-      case 'wifi':
-        addLog('Activating Monitor Mode on wlan0...', 'warning');
-        setTimeout(() => {
-          addLog('Monitor mode enabled. Sniffing packets...', 'success');
-          openWindow('wifi');
-        }, 1200);
-        break;
-
       case 'whoami':
-        addLog('ghost@sovereign-node-01');
-        break;
-
-      case 'exploit':
-        incrementTrace(25);
-        addLog('CRITICAL: Unauthorized exploitation attempt detected.', 'error');
-        addLog('TRACE LEVEL INCREASED: ' + (traceLevel + 25) + '%', 'warning');
-        addLog('Searching for vulnerabilities...', 'warning');
+        addLog('ghost@dubai-grid-v8');
         break;
 
       default:
@@ -126,31 +134,32 @@ export const Terminal = () => {
 
   return (
     <div 
-      className="h-full flex flex-col font-mono text-sm overflow-hidden bg-black/80 p-2 pointer-events-auto"
+      className="h-full flex flex-col font-mono text-sm overflow-hidden bg-black/90 p-2 pointer-events-auto"
       onClick={() => inputRef.current?.focus()}
     >
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-1 scrollbar-hide">
         {history.map((line) => (
           <div key={line.id} className={`break-all ${
             line.type === 'input' ? 'text-neon-cyan' : 
-            line.type === 'error' ? 'text-neon-pink font-bold' :
+            line.type === 'error' ? 'text-red-500 font-bold' :
             line.type === 'success' ? 'text-emerald-400' :
-            line.type === 'warning' ? 'text-neon-orange' :
-            'text-foreground'
+            line.type === 'warning' ? 'text-yellow-400' :
+            line.type === 'info' ? 'text-blue-400' :
+            'text-gray-300'
           }`}>
             {line.text}
           </div>
         ))}
       </div>
       
-      <form onSubmit={handleCommand} className="flex mt-2 border-t border-neon-cyan/20 pt-2">
+      <form onSubmit={handleCommand} className="flex mt-2 border-t border-white/10 pt-2">
         <span className="text-neon-cyan mr-2">{currentPath} $</span>
         <input
           ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className="flex-1 bg-transparent border-none outline-none text-foreground"
+          className="flex-1 bg-transparent border-none outline-none text-white font-bold"
           autoFocus
           spellCheck={false}
         />
