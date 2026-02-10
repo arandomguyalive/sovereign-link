@@ -1,216 +1,159 @@
 'use client';
 
 import React, { useRef, useState, useMemo, useEffect, Suspense } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Text, Float, Stars, PerspectiveCamera, Html, useTexture } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { MapControls, Text, Float, Stars, PerspectiveCamera, Html, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { useWindowManager } from '@/store/useWindowManager';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Globe } from 'lucide-react';
 
 const COLORS = {
   cyan: '#00D4E5',
   pink: '#FF53B2',
   purple: '#6B0098',
   gold: '#FFD700',
-  ocean: '#05101a',
-  grid: '#0a0a0a',
-  danger: '#ff3333',
-  building: '#080808'
+  ocean: '#020408',
+  ground: '#050505',
+  heat_hot: '#ffffff',
+  heat_warm: '#ffaa00',
+  heat_cold: '#880000',
 };
 
-// --- Real-World Geography Offsets (Scaled for 3D View) ---
-// Origin (0,0) is roughly Burj Al Arab (Center Coast)
-// Palm is SW (-X, +Z), Khalifa is NE (+X, -Z)
-const GEO = {
-  PALM: { x: -35, z: 15 },
-  ARAB: { x: -5, z: 5 },
-  KHALIFA: { x: 30, z: -20 },
-  NBD: { x: 35, z: -15 },
+// --- Multi-City Geography Config ---
+const CITIES = {
+  DUBAI: { name: 'DUBAI_CORE', cam: [0, 60, 60], sun: [10, 50, 10] },
+  NEOM: { name: 'NEOM_THE_LINE', cam: [0, 40, 100], sun: [50, 20, 0] },
+  NYC: { name: 'NYC_MANHATTAN', cam: [0, 80, 20], sun: [-20, 40, 20] },
+  LDN: { name: 'LONDON_CENTRAL', cam: [0, 50, 50], sun: [0, 30, -30] },
 };
 
-// --- Advanced Ocean Simulation ---
-const Ocean = () => {
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 20]}>
-      <planeGeometry args={[200, 100]} />
-      <meshStandardMaterial 
-        color={COLORS.ocean} 
-        metalness={0.8} 
-        roughness={0.1} 
-        transparent 
-        opacity={0.9}
-      />
-    </mesh>
-  );
-};
-
-// --- Landmass / Coastline ---
-const Landmass = () => {
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.65, -30]}>
-      <planeGeometry args={[200, 100]} />
-      <meshStandardMaterial color="#020202" roughness={1} />
-    </mesh>
-  );
-};
-
-// --- Procedural Lidar Humanoid ---
-const LidarHuman = ({ position, color = COLORS.cyan }: any) => {
+// --- Heatmap Humanoid (Satellite IR Style) ---
+const SatelliteHuman = ({ position }: any) => {
   const group = useRef<THREE.Group>(null);
-  const [speed] = useState(0.01 + Math.random() * 0.02);
+  const [speed] = useState(0.02 + Math.random() * 0.03);
   const [offset] = useState(Math.random() * 100);
   
   useFrame((state) => {
     if (!group.current) return;
     const t = state.clock.getElapsedTime() + offset;
-    group.current.position.x += Math.sin(t * 0.3) * speed;
-    group.current.position.z += Math.cos(t * 0.3) * speed;
-    group.current.rotation.y = Math.atan2(Math.cos(t * 0.3), -Math.sin(t * 0.3));
+    group.current.position.x += Math.sin(t * 0.2) * speed;
+    group.current.position.z += Math.cos(t * 0.2) * speed;
+    group.current.rotation.y = Math.atan2(Math.cos(t * 0.2), -Math.sin(t * 0.2));
   });
 
   return (
     <group ref={group} position={position}>
-      <mesh position={[0, 1.7, 0]}>
-        <sphereGeometry args={[0.1, 8, 8]} />
-        <meshBasicMaterial color={color} wireframe />
+      {/* Thermal Core (Body) */}
+      <mesh position={[0, 0.9, 0]}>
+        <capsuleGeometry args={[0.12, 0.6, 4, 8]} />
+        <meshBasicMaterial color={COLORS.heat_hot} />
       </mesh>
-      <mesh position={[0, 1.1, 0]}>
-        <cylinderGeometry args={[0.12, 0.08, 0.9, 8]} />
-        <meshBasicMaterial color={color} wireframe />
+      {/* Head */}
+      <mesh position={[0, 1.6, 0]}>
+        <sphereGeometry args={[0.1, 8, 8]} />
+        <meshBasicMaterial color={COLORS.heat_hot} />
+      </mesh>
+      {/* Heat Halo */}
+      <mesh position={[0, 1, 0]}>
+        <sphereGeometry args={[0.4, 8, 8]} />
+        <meshBasicMaterial color={COLORS.heat_warm} transparent opacity={0.3} />
       </mesh>
     </group>
   );
 };
 
-const CrowdSystem = ({ count = 20, area = [10, 10], offset = [0, 0] }: any) => {
+const CrowdSystem = ({ count = 50, area = [40, 40] }: any) => {
   return (
-    <group position={[offset[0], 0, offset[1]]}>
+    <group>
       {[...Array(count)].map((_, i) => (
-        <LidarHuman 
+        <SatelliteHuman 
           key={i} 
           position={[(Math.random()-0.5)*area[0], 0, (Math.random()-0.5)*area[1]]} 
-          color={Math.random() > 0.9 ? COLORS.gold : COLORS.cyan} 
         />
       ))}
     </group>
   );
 };
 
-// --- Burj Al Arab (The Sail) ---
-const BurjAlArab = ({ onHack }: any) => {
-  const sailShape = useMemo(() => {
-    const shape = new THREE.Shape();
-    shape.moveTo(0, 0);
-    shape.quadraticCurveTo(3, 4, 0, 8); // Curved back
-    shape.lineTo(-1, 0);
-    shape.lineTo(0, 0);
-    return shape;
-  }, []);
+// --- City Architectures ---
 
-  return (
-    <group position={[GEO.ARAB.x, 0, GEO.ARAB.z]} rotation={[0, Math.PI / 4, 0]} onClick={(e) => { e.stopPropagation(); onHack("ROYAL_SUITE_WIFI", "WIFI"); }}>
-      {/* Main Sail Structure */}
-      <mesh position={[0, 0, 0]}>
-        <extrudeGeometry args={[sailShape, { depth: 1, bevelEnabled: false }]} />
-        <meshStandardMaterial color="white" transparent opacity={0.9} />
-        <lineSegments>
-          <edgesGeometry args={[new THREE.ExtrudeGeometry(sailShape, { depth: 1, bevelEnabled: false })]} />
-          <lineBasicMaterial color={COLORS.cyan} />
-        </lineSegments>
-      </mesh>
-      {/* Helipad */}
-      <mesh position={[0, 6.5, 1.2]}>
-        <cylinderGeometry args={[0.8, 0.1, 0.2, 16]} />
-        <meshBasicMaterial color={COLORS.gold} />
-      </mesh>
-      <Html position={[0, 9, 0]} distanceFactor={50}>
-        <div className="bg-black/80 border border-white/20 text-[8px] text-white px-1 py-0.5 font-mono">BURJ_AL_ARAB</div>
-      </Html>
-    </group>
-  );
-};
-
-// --- Burj Khalifa (Downtown) ---
-const BurjKhalifa = ({ onHack }: any) => (
-  <group position={[GEO.KHALIFA.x, 0, GEO.KHALIFA.z]} onClick={(e) => { e.stopPropagation(); onHack("BURJ_CORE_154", "SERVER"); }}>
-    <mesh position={[0, 10, 0]}>
-      <cylinderGeometry args={[0.1, 2, 20, 6]} />
-      <meshStandardMaterial color={COLORS.building} opacity={0.95} transparent />
-      <lineSegments>
-        <edgesGeometry args={[new THREE.CylinderGeometry(0.1, 2, 20, 6)]} />
-        <lineBasicMaterial color={COLORS.cyan} />
-      </lineSegments>
+// DUBAI: Iconic landmarks + Coastline
+const DubaiMap = ({ onHack }: any) => (
+  <group>
+    {/* Ocean */}
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 20]}>
+      <planeGeometry args={[200, 100]} />
+      <meshStandardMaterial color={COLORS.ocean} metalness={0.9} roughness={0.1} />
     </mesh>
-    {[0, 120, 240].map((rot, i) => (
-      <mesh key={i} position={[0, 3, 0]} rotation={[0, rot * (Math.PI/180), 0]}>
-        <boxGeometry args={[1, 6, 1]} />
-        <meshStandardMaterial color={COLORS.building} />
-        <lineSegments>
-          <edgesGeometry args={[new THREE.BoxGeometry(1, 6, 1)]} />
-          <lineBasicMaterial color={COLORS.cyan} opacity={0.5} transparent />
-        </lineSegments>
+    
+    {/* Burj Khalifa */}
+    <group position={[0, 0, -10]} onClick={(e) => { e.stopPropagation(); onHack("BURJ_CORE", "SERVER"); }}>
+      <mesh position={[0, 15, 0]}>
+        <cylinderGeometry args={[0.1, 2, 30, 6]} />
+        <meshStandardMaterial color="#111" />
+        <lineSegments><edgesGeometry args={[new THREE.CylinderGeometry(0.1, 2, 30, 6)]} /><lineBasicMaterial color={COLORS.cyan} /></lineSegments>
       </mesh>
-    ))}
-    <Html position={[0, 21, 0]} distanceFactor={60}>
-      <div className="text-[8px] text-neon-cyan bg-black/80 px-1 border border-neon-cyan">BURJ_KHALIFA // 828m</div>
-    </Html>
+    </group>
+
+    {/* Burj Al Arab */}
+    <group position={[-15, 0, 10]} onClick={(e) => { e.stopPropagation(); onHack("ROYAL_SUITE", "WIFI"); }}>
+      <mesh position={[0, 5, 0]}>
+        <cylinderGeometry args={[0, 2, 10, 3]} />
+        <meshStandardMaterial color="white" />
+      </mesh>
+    </group>
+
+    <CrowdSystem count={60} />
   </group>
 );
 
-// --- Palm Jumeirah (Coast) ---
-const PalmJumeirah = ({ onHack }: any) => {
-  return (
-    <group position={[GEO.PALM.x, -0.1, GEO.PALM.z]} rotation={[-Math.PI / 2, 0, -0.8]} onClick={(e) => { e.stopPropagation(); onHack("PALM_GRID_MASTER", "WIFI"); }}>
-      {/* Trunk */}
-      <mesh position={[0, 0, -0.1]}>
-        <planeGeometry args={[2, 10]} />
-        <meshBasicMaterial color={COLORS.purple} wireframe />
+// NEOM: The Line (Massive Wall)
+const NeomMap = ({ onHack }: any) => (
+  <group>
+    <mesh position={[0, -0.1, 0]} rotation={[-Math.PI/2, 0, 0]}><planeGeometry args={[200, 200]} /><meshStandardMaterial color="#C2B280" /></mesh>
+    
+    <group onClick={(e) => { e.stopPropagation(); onHack("NEOM_MAIN_FRAME", "SERVER"); }}>
+      <mesh position={[0, 5, 0]}>
+        <boxGeometry args={[100, 10, 2]} />
+        <meshPhysicalMaterial color="silver" metalness={1} roughness={0} /> {/* Mirror Effect */}
       </mesh>
-      {/* Fronds */}
-      {[...Array(16)].map((_, i) => (
-        <group key={i} position={[0, i * 0.8 - 4, 0]}>
-          <mesh rotation={[0, 0, 0.3]} position={[3, 0, 0]}>
-            <planeGeometry args={[6, 0.2]} />
-            <meshBasicMaterial color={COLORS.purple} wireframe />
-          </mesh>
-          <mesh rotation={[0, 0, -0.3]} position={[-3, 0, 0]}>
-            <planeGeometry args={[6, 0.2]} />
-            <meshBasicMaterial color={COLORS.purple} wireframe />
-          </mesh>
-        </group>
-      ))}
-      {/* Crescent */}
-      <mesh position={[0, 6, 0]}>
-        <ringGeometry args={[5, 6, 32, 1, 0, Math.PI]} />
-        <meshBasicMaterial color={COLORS.purple} wireframe />
-      </mesh>
-      
-      <Html position={[0, 0, 2]} distanceFactor={60}>
-        <div className="text-[8px] text-purple-400 bg-black/80 px-1 border border-purple-500">PALM_JUMEIRAH</div>
-      </Html>
+      <Html position={[0, 12, 0]} distanceFactor={50}><div className="text-xs bg-black text-white px-1">THE_LINE</div></Html>
     </group>
-  );
-};
+    
+    <CrowdSystem count={30} area={[80, 5]} />
+  </group>
+);
 
-// --- Sheikh Zayed Road (Traffic Artery) ---
-const SheikhZayedRoad = () => {
-  return (
-    <group>
-      {/* The Highway */}
-      <mesh position={[10, 0.1, -10]} rotation={[-Math.PI/2, 0, 0.6]}>
-        <planeGeometry args={[5, 80]} />
-        <meshBasicMaterial color="#111" />
-      </mesh>
-      {/* Traffic Particles */}
-      {[...Array(40)].map((_, i) => (
-        <LidarHuman key={i} position={[i * 1.5 - 20, 0.5, i * -1]} color={i % 2 === 0 ? '#ff0000' : '#ffffff'} />
-      ))}
-    </group>
-  );
-};
+// NYC: Dense Grid + Central Park
+const NycMap = ({ onHack }: any) => (
+  <group>
+    <mesh position={[0, -0.1, 0]} rotation={[-Math.PI/2, 0, 0]}><planeGeometry args={[100, 100]} /><meshStandardMaterial color="#111" /></mesh>
+    
+    {/* Central Park (Void) */}
+    <mesh position={[0, 0.1, 0]} rotation={[-Math.PI/2, 0, 0]}><planeGeometry args={[10, 40]} /><meshBasicMaterial color="#003300" /></mesh>
+
+    {/* Skyscrapers */}
+    {[...Array(100)].map((_, i) => {
+      const x = (Math.random()-0.5) * 60;
+      const z = (Math.random()-0.5) * 60;
+      if (Math.abs(x) < 6 && Math.abs(z) < 21) return null; // Park cutout
+      return (
+        <mesh key={i} position={[x, Math.random()*5+2, z]}>
+          <boxGeometry args={[2, Math.random()*10+4, 2]} />
+          <meshStandardMaterial color="#222" />
+          <lineSegments><edgesGeometry args={[new THREE.BoxGeometry(2, 1, 2)]} /><lineBasicMaterial color="#444" /></lineSegments>
+        </mesh>
+      );
+    })}
+    
+    <CrowdSystem count={100} area={[60, 60]} />
+  </group>
+);
 
 export const DubaiTacticalMap = () => {
   const { openWindow, updateWindow } = useWindowManager();
+  const [city, setCity] = useState<'DUBAI' | 'NEOM' | 'NYC' | 'LDN'>('DUBAI');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -218,58 +161,59 @@ export const DubaiTacticalMap = () => {
   }, []);
 
   const handleHack = (target: string, type: string) => {
-    updateWindow('terminal', { 
-      isOpen: true, 
-      title: `TERMINAL // TARGET: ${target}`,
-    });
+    updateWindow('terminal', { isOpen: true, title: `TERMINAL // TARGET: ${target}` });
     openWindow('terminal');
   };
 
-  if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono">UPLINKING_SATELLITE_FEED...</div>;
+  if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono">ESTABLISHING_UPLINK...</div>;
 
   return (
     <div className="w-full h-full bg-[#020202] relative cursor-crosshair">
-      <Canvas shadows camera={{ position: [0, 40, 40], fov: 50 }}>
-        <PerspectiveCamera makeDefault position={[0, 50, 60]} fov={45} />
-        <OrbitControls 
+      <Canvas shadows>
+        <PerspectiveCamera makeDefault position={CITIES[city].cam as any} fov={45} />
+        {/* MapControls allows panning (right click) and zooming to cursor */}
+        <MapControls 
           enableDamping 
-          dampingFactor={0.05}
-          maxPolarAngle={Math.PI / 2.2} // Prevent going under ground
-          minDistance={10}
-          maxDistance={120}
+          dampingFactor={0.05} 
+          minDistance={2} 
+          maxDistance={150} 
+          maxPolarAngle={Math.PI / 2.1}
         />
         
-        <Stars radius={200} depth={50} count={8000} factor={4} saturation={0} fade speed={0.5} />
-        <ambientLight intensity={0.2} />
-        <pointLight position={[10, 50, 10]} intensity={1.5} color={COLORS.cyan} />
-        
-        {/* Environment */}
-        <Ocean />
-        <Landmass />
-        <SheikhZayedRoad />
+        <Stars radius={200} depth={50} count={5000} factor={4} saturation={0} fade />
+        <ambientLight intensity={0.3} />
+        <pointLight position={CITIES[city].sun as any} intensity={1.5} color="white" />
 
         <group>
-          <BurjKhalifa onHack={handleHack} />
-          <CrowdSystem count={30} area={[10, 10]} offset={[GEO.KHALIFA.x, GEO.KHALIFA.z]} />
-          
-          <BurjAlArab onHack={handleHack} />
-          
-          <PalmJumeirah onHack={handleHack} />
-          <CrowdSystem count={15} area={[8, 8]} offset={[GEO.PALM.x, GEO.PALM.z]} />
+          {city === 'DUBAI' && <DubaiMap onHack={handleHack} />}
+          {city === 'NEOM' && <NeomMap onHack={handleHack} />}
+          {city === 'NYC' && <NycMap onHack={handleHack} />}
+          {city === 'LDN' && <NycMap onHack={handleHack} />} {/* Placeholder for London reuse */}
         </group>
       </Canvas>
 
-      {/* Map HUD */}
-      <div className="absolute top-4 left-4 pointer-events-none font-mono">
-        <div className="text-xs text-neon-cyan font-black tracking-[0.3em] mb-1">DUBAI_TWIN_V10</div>
-        <div className="text-[9px] text-white/60">SOURCE: KH-11 SATELLITE</div>
-        <div className="text-[9px] text-emerald-500 animate-pulse">LIVE_FEED: ACTIVE</div>
+      {/* City Selector HUD */}
+      <div className="absolute top-4 left-4 flex flex-col gap-2 font-mono pointer-events-auto">
+        <div className="text-[10px] text-neon-cyan font-black tracking-[0.3em] mb-1">GLOBAL_SAT_FEED</div>
+        {Object.keys(CITIES).map((c) => (
+          <button
+            key={c}
+            onClick={() => setCity(c as any)}
+            className={`px-3 py-1 text-[9px] border text-left flex items-center gap-2 transition-all ${
+              city === c 
+                ? 'bg-neon-cyan/20 border-neon-cyan text-neon-cyan' 
+                : 'border-white/10 text-white/40 hover:bg-white/5'
+            }`}
+          >
+            <Globe size={10} />
+            {CITIES[c as keyof typeof CITIES].name}
+          </button>
+        ))}
       </div>
-      
-      {/* Coordinates */}
+
       <div className="absolute bottom-4 right-4 pointer-events-none font-mono text-right">
-        <div className="text-[10px] text-white/40 font-bold">25.2048° N, 55.2708° E</div>
-        <div className="text-[8px] text-neon-cyan uppercase tracking-widest">Targeting_System: ONLINE</div>
+        <div className="text-[8px] text-white/40">LAT: {city === 'DUBAI' ? '25.2' : city === 'NYC' ? '40.7' : '28.4'} N</div>
+        <div className="text-[10px] text-emerald-500 mt-1 uppercase font-bold animate-pulse">Live_Feed_Active</div>
       </div>
     </div>
   );
