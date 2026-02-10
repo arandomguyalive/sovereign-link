@@ -98,18 +98,18 @@ export const Desktop = () => {
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-[#050505] font-mono">
+    <div className="relative w-screen h-screen overflow-hidden bg-[#050505] font-mono select-none">
       {/* Background with Grid Pattern */}
       <div className="absolute inset-0 opacity-20 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
       <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/5 via-transparent to-neon-cyan/5 pointer-events-none" />
       
-      {/* Desktop Icons Layer - Important: Container is pointer-events-none */}
-      <div className="absolute top-10 left-10 grid grid-cols-1 gap-6 z-[500] pointer-events-none">
+      {/* 1. Desktop Icons Layer */}
+      <div className="absolute top-10 left-10 grid grid-cols-1 gap-6 z-[100]">
         {icons.map((item) => (
           <button
             key={item.id}
             onClick={() => openWindow(item.id)}
-            className="group flex flex-col items-center gap-1 w-24 p-2 rounded-lg hover:bg-white/5 transition-all pointer-events-auto"
+            className="group flex flex-col items-center gap-1 w-24 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
           >
             <div className="w-14 h-14 flex items-center justify-center rounded-2xl bg-black/60 border border-white/10 group-hover:border-neon-cyan/50 group-hover:shadow-[0_0_20px_rgba(0,212,229,0.2)] transition-all">
               <item.icon className="text-zinc-500 group-hover:text-neon-cyan transition-colors" size={28} />
@@ -121,32 +121,27 @@ export const Desktop = () => {
         ))}
       </div>
 
-      {/* Windows Layer - Higher Z-index than Icons */}
-      <div className="absolute inset-0 z-[600] pointer-events-none">
-        {Object.values(windows).map((win) => {
-          if (!win.isOpen) return null;
-          return (
-            <Window key={win.id} id={win.id} title={win.title}>
-              {win.id === 'terminal' && <Terminal />}
-              {win.id === 'camera' && <CameraFeed />}
-              {win.id === 'wifi' && <WiFiSniffer />}
-              {win.id === 'cracker' && <HydraCracker />}
-              {win.id === 'network' && <NetworkMap />}
-              {win.id === 'map' && (
-                <div className="w-full h-full bg-black flex flex-col items-center justify-center p-10 text-center">
-                  <Scan size={48} className="text-neon-cyan animate-pulse mb-4" />
-                  <h3 className="text-neon-cyan text-sm font-black uppercase tracking-[0.3em]">Geo-Trace Protocol</h3>
-                  <p className="text-[10px] text-white/40 mt-2 uppercase tracking-widest">Awaiting Uplink Synchronization...</p>
-                </div>
-              )}
-            </Window>
-          );
-        })}
-      </div>
+      {/* 2. Windows Layer - All windows rendered here */}
+      {Object.values(windows).map((win) => (
+        <Window key={win.id} id={win.id} title={win.title}>
+          {win.id === 'terminal' && <Terminal />}
+          {win.id === 'camera' && <CameraFeed />}
+          {win.id === 'wifi' && <WiFiSniffer />}
+          {win.id === 'cracker' && <HydraCracker />}
+          {win.id === 'network' && <NetworkMap />}
+          {win.id === 'map' && (
+            <div className="w-full h-full bg-black flex flex-col items-center justify-center p-10 text-center">
+              <Scan size={48} className="text-neon-cyan animate-pulse mb-4" />
+              <h3 className="text-neon-cyan text-sm font-black uppercase tracking-[0.3em]">Geo-Trace Protocol</h3>
+              <p className="text-[10px] text-white/40 mt-2 uppercase tracking-widest">Awaiting Uplink Synchronization...</p>
+            </div>
+          )}
+        </Window>
+      ))}
 
-      {/* Status Bar Layer - Important: Container is pointer-events-none */}
-      <div className="absolute bottom-0 left-0 w-full h-10 glass-panel border-t border-white/10 flex items-center justify-between px-6 z-[1000] pointer-events-none">
-        <div className="flex gap-8 items-center pointer-events-auto">
+      {/* 3. Status Bar Layer - Higher Z-index than Windows */}
+      <div className="absolute bottom-0 left-0 w-full h-10 glass-panel border-t border-white/10 flex items-center justify-between px-6 z-[1000] bg-black/40 backdrop-blur-md">
+        <div className="flex gap-8 items-center">
           <div className="flex items-center gap-3">
             <Cpu size={14} className="text-neon-cyan animate-spin-slow" />
             <span className="text-[10px] text-neon-cyan font-black tracking-widest uppercase">Kernel: 24.1%</span>
@@ -156,7 +151,7 @@ export const Desktop = () => {
             <span className="text-[10px] text-emerald-500 font-black tracking-widest uppercase">Secure Uplink</span>
           </div>
         </div>
-        <div className="flex gap-8 items-center pointer-events-auto">
+        <div className="flex gap-8 items-center">
           <div className="flex items-center gap-2">
             <Zap size={14} className="text-neon-orange" />
             <span className="text-[10px] text-white/60 font-black uppercase tracking-widest">98.4%</span>
@@ -166,7 +161,7 @@ export const Desktop = () => {
       </div>
 
       {/* Trace Level Overlay */}
-      <div className="absolute top-10 right-10 w-80 h-20 glass-panel p-4 flex flex-col justify-between z-[1000] pointer-events-none border-l-4 border-neon-cyan shadow-2xl">
+      <div className="absolute top-10 right-10 w-80 h-20 glass-panel p-4 flex flex-col justify-between z-[1000] border-l-4 border-neon-cyan shadow-2xl pointer-events-none">
         <div className="flex justify-between text-[11px] uppercase tracking-[0.2em] font-black">
           <span className={traceLevel > 70 ? "text-neon-pink animate-pulse" : "text-neon-cyan"}>
             {traceLevel > 70 ? "!! TRACE DETECTED !!" : "Trace Detection Active"}
@@ -190,7 +185,7 @@ export const Desktop = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[20000] bg-red-950/95 backdrop-blur-2xl flex flex-col items-center justify-center p-10 text-center pointer-events-auto"
+            className="fixed inset-0 z-[20000] bg-red-950/95 backdrop-blur-2xl flex flex-col items-center justify-center p-10 text-center"
           >
             <ShieldAlert size={150} className="text-white mb-8 animate-bounce" />
             <h1 className="text-7xl font-black text-white uppercase tracking-[0.5em] mb-4">Compromised</h1>

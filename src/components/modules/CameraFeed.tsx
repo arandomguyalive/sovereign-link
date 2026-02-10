@@ -17,19 +17,15 @@ interface Feed {
   }
 }
 
-// These are high-quality, stable video loops that represent our "Synthetic Surveillance" engine.
-// They look exactly like real CCTV and never go down.
+// Using high-reliability CDN video loops for the Synthetic Surveillance engine.
 const FEEDS: Feed[] = [
-  { id: 'DXB-C-01', source: 'https://cdn.pixabay.com/video/2021/08/13/84941-587424683_tiny.mp4', label: 'Dubai Marina // North Gate', location: 'Dubai, UAE', sector: 'GULF', meta: { ip: '192.168.4.12', protocol: 'RTSP', encryption: 'AES-256' } },
-  { id: 'MAK-H-01', source: 'https://cdn.pixabay.com/video/2016/11/02/6211-189635031_tiny.mp4', label: 'Masjid al-Haram // Entrance', location: 'Makkah, KSA', sector: 'GULF', meta: { ip: '10.0.8.44', protocol: 'HTTP-FLV', encryption: 'Sovereign-v1' } },
-  { id: 'DXB-B-09', source: 'https://cdn.pixabay.com/video/2018/06/07/16631-274801126_tiny.mp4', label: 'Burj Khalifa // Elevator Bay', location: 'Dubai, UAE', sector: 'GULF', meta: { ip: '10.10.1.1', protocol: 'RTSP', encryption: 'RSA-4096' } },
-  { id: 'AUH-C-03', source: 'https://cdn.pixabay.com/video/2022/10/24/136323-764353787_tiny.mp4', label: 'Abu Dhabi // Corniche East', location: 'Abu Dhabi, UAE', sector: 'GULF', meta: { ip: '192.168.9.102', protocol: 'ONVIF', encryption: 'None' } },
-  { id: 'RIY-B-05', source: 'https://cdn.pixabay.com/video/2021/11/02/94318-644455823_tiny.mp4', label: 'Riyadh // Kingdom Centre', location: 'Riyadh, KSA', sector: 'GULF', meta: { ip: '172.16.4.55', protocol: 'RTSP', encryption: 'AES-128' } },
-  { id: 'TKY-S-09', source: 'https://cdn.pixabay.com/video/2021/04/10/70654-536965825_tiny.mp4', label: 'Shibuya Crossing // South', location: 'Tokyo, Japan', sector: 'ASIA', meta: { ip: '172.16.0.4', protocol: 'RTSP', encryption: 'Sovereign-v2' } },
-  { id: 'SEL-G-04', source: 'https://cdn.pixabay.com/video/2020/06/19/42557-432292850_tiny.mp4', label: 'Gangnam Dist // Sector 04', location: 'Seoul, Korea', sector: 'ASIA', meta: { ip: '192.168.12.5', protocol: 'HTTP-FLV', encryption: 'SSL/TLS' } },
-  { id: 'NYC-T-04', source: 'https://cdn.pixabay.com/video/2017/08/17/11383-228941706_tiny.mp4', label: 'Times Square // Sector 04', location: 'New York, USA', sector: 'WEST', meta: { ip: '10.0.5.99', protocol: 'RTSP', encryption: 'None' } },
-  { id: 'LDN-B-12', source: 'https://cdn.pixabay.com/video/2019/11/14/29161-374705574_tiny.mp4', label: 'London Bridge // East Gate', location: 'London, UK', sector: 'WEST', meta: { ip: '192.168.12.5', protocol: 'ONVIF', encryption: 'SSL/TLS' } },
-  { id: 'SAT-L-09', source: 'https://cdn.pixabay.com/video/2019/04/23/23011-332356501_tiny.mp4', label: 'Low Orbit // Satellite Link', location: 'Orbital', sector: 'RECON', meta: { ip: '0.0.0.0', protocol: 'Sovereign-Uplink', encryption: 'Quantum' } },
+  { id: 'DXB-C-01', source: 'https://cdn.coverr.co/videos/preview/720/coverr-busy-city-traffic-in-dubai-at-night-8461.mp4', label: 'Dubai Marina // North Gate', location: 'Dubai, UAE', sector: 'GULF', meta: { ip: '192.168.4.12', protocol: 'RTSP', encryption: 'AES-256' } },
+  { id: 'MAK-H-01', source: 'https://cdn.coverr.co/videos/preview/720/coverr-crowd-of-people-walking-in-a-market-5259.mp4', label: 'Masjid al-Haram // Entrance', location: 'Makkah, KSA', sector: 'GULF', meta: { ip: '10.0.8.44', protocol: 'HTTP-FLV', encryption: 'Sovereign-v1' } },
+  { id: 'DXB-B-09', source: 'https://cdn.coverr.co/videos/preview/720/coverr-dubai-skyline-at-night-8463.mp4', label: 'Burj Khalifa // Elevator Bay', location: 'Dubai, UAE', sector: 'GULF', meta: { ip: '10.10.1.1', protocol: 'RTSP', encryption: 'RSA-4096' } },
+  { id: 'TKY-S-09', source: 'https://cdn.coverr.co/videos/preview/720/coverr-street-in-tokyo-at-night-1563.mp4', label: 'Shibuya Crossing // South', location: 'Tokyo, Japan', sector: 'ASIA', meta: { ip: '172.16.0.4', protocol: 'RTSP', encryption: 'Sovereign-v2' } },
+  { id: 'NYC-T-04', source: 'https://cdn.coverr.co/videos/preview/720/coverr-times-square-at-night-5452.mp4', label: 'Times Square // Sector 04', location: 'New York, USA', sector: 'WEST', meta: { ip: '10.0.5.99', protocol: 'RTSP', encryption: 'None' } },
+  { id: 'LDN-B-12', source: 'https://cdn.coverr.co/videos/preview/720/coverr-london-bridge-and-traffic-at-night-2637.mp4', label: 'London Bridge // East Gate', location: 'London, UK', sector: 'WEST', meta: { ip: '192.168.12.5', protocol: 'ONVIF', encryption: 'SSL/TLS' } },
+  { id: 'SAT-L-09', source: 'https://cdn.coverr.co/videos/preview/720/coverr-view-of-earth-from-space-8451.mp4', label: 'Low Orbit // Satellite Link', location: 'Orbital', sector: 'RECON', meta: { ip: '0.0.0.0', protocol: 'Sovereign-Uplink', encryption: 'Quantum' } },
 ];
 
 export const CameraFeed = () => {
@@ -112,6 +108,7 @@ export const CameraFeed = () => {
               <video 
                 src={current.source}
                 autoPlay loop muted playsInline
+                key={current.source}
                 className="w-full h-full object-cover grayscale contrast-[1.6] brightness-[0.7] sepia-[0.3]"
               />
               
@@ -180,7 +177,6 @@ export const CameraFeed = () => {
 
               {/* CRT Scanline / Noise Overlay */}
               <div className="absolute inset-0 pointer-events-none opacity-40 mix-blend-overlay bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_3px,2px_100%]" />
-              <div className="absolute inset-0 pointer-events-none opacity-[0.05] bg-[url('https://media.giphy.com/media/oEI9uWUicG5R6/giphy.gif')] bg-cover mix-blend-screen" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -201,11 +197,6 @@ export const CameraFeed = () => {
               <span className="text-[9px] text-white font-black uppercase tracking-widest leading-tight mb-1">{f.label}</span>
               <span className="text-[7px] text-neon-cyan/80 font-bold tracking-[0.3em]">{f.id}</span>
             </div>
-            {current.id === f.id && (
-              <div className="absolute top-2 right-2">
-                <div className="w-2 h-2 bg-neon-cyan rounded-full animate-ping" />
-              </div>
-            )}
           </button>
         ))}
       </div>
