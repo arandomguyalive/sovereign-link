@@ -9,6 +9,7 @@ import { WiFiSniffer } from '@/components/modules/WiFiSniffer';
 import { HydraCracker } from '@/components/modules/HydraCracker';
 import { NetworkMap } from '@/components/modules/NetworkMap';
 import { useTerminal } from '@/store/useTerminal';
+import { motion } from 'framer-motion';
 import { Terminal as TerminalIcon, Camera, Wifi, Share2, Shield, Map, ShieldAlert } from 'lucide-react';
 
 export const Desktop = () => {
