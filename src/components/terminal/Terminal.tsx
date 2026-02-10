@@ -72,6 +72,9 @@ export const Terminal = () => {
             } else if (target.includes('PALM')) {
               addFile({ name: 'VIP_Resident_List.csv', content: 'Villa 42: Sheikh M. // Villa 09: CEO Emaar', type: 'text' });
               addLog('-> VIP_Resident_List.csv saved to /home/ghost', 'success');
+            } else if (target.includes('ROYAL')) {
+              addFile({ name: 'Guest_List_VVIP.enc', content: 'Room 101: Diplomat X // Room 202: Agent 47', type: 'binary' });
+              addLog('-> Guest_List_VVIP.enc saved to /home/ghost', 'success');
             } else {
               addFile({ name: 'User_Logs.txt', content: 'SMS: "Meet me at the Marina at 0200"', type: 'text' });
               addLog('-> User_Logs.txt saved to /home/ghost', 'success');
