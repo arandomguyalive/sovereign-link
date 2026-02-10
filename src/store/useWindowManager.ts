@@ -8,6 +8,10 @@ export interface WindowInstance {
   isOpen: boolean;
   isMaximized: boolean;
   zIndex: number;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
 }
 
 interface WindowState {
@@ -16,16 +20,17 @@ interface WindowState {
   openWindow: (id: AppId) => void;
   closeWindow: (id: AppId) => void;
   focusWindow: (id: AppId) => void;
+  updateWindow: (id: AppId, updates: Partial<WindowInstance>) => void;
 }
 
-export const useWindowManager = create<WindowState>((set, get) => ({
+export const useWindowManager = create<WindowState>((set) => ({
   windows: {
-    terminal: { id: 'terminal', title: 'root@sovereign:~', isOpen: true, isMaximized: false, zIndex: 10 },
-    camera: { id: 'camera', title: 'GOD-EYE // CCTV_FEED', isOpen: false, isMaximized: false, zIndex: 1 },
-    wifi: { id: 'wifi', title: 'WIFI_SNIFFER v2.1', isOpen: false, isMaximized: false, zIndex: 1 },
-    network: { id: 'network', title: 'LOCAL_NETWORK_MAP', isOpen: false, isMaximized: false, zIndex: 1 },
-    cracker: { id: 'cracker', title: 'HYDRA_FORCE // BRUTE', isOpen: false, isMaximized: false, zIndex: 1 },
-    map: { id: 'map', title: 'GEO_TRACE', isOpen: false, isMaximized: false, zIndex: 1 },
+    terminal: { id: 'terminal', title: 'root@sovereign:~', isOpen: true, isMaximized: false, zIndex: 10, width: 700, height: 450, x: 50, y: 50 },
+    camera: { id: 'camera', title: 'GOD-EYE // CCTV_FEED', isOpen: false, isMaximized: false, zIndex: 1, width: 800, height: 500, x: 100, y: 100 },
+    wifi: { id: 'wifi', title: 'WIFI_SNIFFER v2.1', isOpen: false, isMaximized: false, zIndex: 1, width: 600, height: 400, x: 150, y: 150 },
+    network: { id: 'network', title: 'LOCAL_NETWORK_MAP', isOpen: false, isMaximized: false, zIndex: 1, width: 600, height: 400, x: 200, y: 200 },
+    cracker: { id: 'cracker', title: 'HYDRA_FORCE // BRUTE', isOpen: false, isMaximized: false, zIndex: 1, width: 500, height: 450, x: 250, y: 250 },
+    map: { id: 'map', title: 'GEO_TRACE', isOpen: false, isMaximized: false, zIndex: 1, width: 800, height: 500, x: 300, y: 300 },
   },
   activeWindow: 'terminal',
   openWindow: (id) => set((state) => {
@@ -54,4 +59,10 @@ export const useWindowManager = create<WindowState>((set, get) => ({
       activeWindow: id
     };
   }),
+  updateWindow: (id, updates) => set((state) => ({
+    windows: {
+      ...state.windows,
+      [id]: { ...state.windows[id], ...updates }
+    }
+  })),
 }));

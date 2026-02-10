@@ -126,7 +126,7 @@ export const Terminal = () => {
 
   return (
     <div 
-      className="h-full flex flex-col font-mono text-sm overflow-hidden bg-black/80 p-2"
+      className="h-full flex flex-col font-mono text-sm overflow-hidden bg-black/80 p-2 pointer-events-auto"
       onClick={() => inputRef.current?.focus()}
     >
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-1 scrollbar-hide">
