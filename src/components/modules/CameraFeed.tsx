@@ -9,7 +9,7 @@ interface Feed {
   source: string;
   label: string;
   location: string;
-  type: 'YOUTUBE' | 'VIDEO';
+  sector: 'GULF' | 'ASIA' | 'WEST' | 'RECON';
   meta: {
     ip: string;
     protocol: string;
@@ -18,17 +18,25 @@ interface Feed {
 }
 
 const FEEDS: Feed[] = [
-  { id: 'MAK-LIVE', source: '3_Xp1431YpI', label: 'Masjid al-Haram // Kaaba', location: 'Makkah, KSA', type: 'YOUTUBE', meta: { ip: '10.0.8.44', protocol: 'RTSP', encryption: 'Sovereign-v1' } },
-  { id: 'DXB-SURV', source: 'https://cdn.coverr.co/videos/preview/720/coverr-busy-city-traffic-in-dubai-at-night-8461.mp4', label: 'Dubai Marina // South', location: 'Dubai, UAE', type: 'VIDEO', meta: { ip: '192.168.4.12', protocol: 'HTTP-FLV', encryption: 'AES-256' } },
-  { id: 'TKY-RECON', source: 'HpdO5Kq3o7Y', label: 'Shibuya Crossing // South', location: 'Tokyo, Japan', type: 'YOUTUBE', meta: { ip: '172.16.0.4', protocol: 'RTSP', encryption: 'Sovereign-v2' } },
-  { id: 'NYC-TACT', source: '1-iS7LArMPA', label: 'Times Square // Sector 04', location: 'New York, USA', type: 'YOUTUBE', meta: { ip: '10.0.5.99', protocol: 'RTSP', encryption: 'None' } },
-  { id: 'ORB-LINK', source: 'https://cdn.coverr.co/videos/preview/720/coverr-view-of-earth-from-space-8451.mp4', label: 'Orbital Satellite // Link', location: 'Low Orbit', type: 'VIDEO', meta: { ip: '0.0.0.0', protocol: 'UPLINK', encryption: 'Quantum' } },
+  { id: 'DXB-C-01', source: 'https://assets.mixkit.co/videos/preview/mixkit-city-traffic-at-night-1070-large.mp4', label: 'Dubai Marina // North Gate', location: 'Dubai, UAE', sector: 'GULF', meta: { ip: '192.168.4.12', protocol: 'RTSP', encryption: 'AES-256' } },
+  { id: 'AUH-C-03', source: 'https://assets.mixkit.co/videos/preview/mixkit-top-view-of-a-city-at-night-1075-large.mp4', label: 'Corniche // Abu Dhabi', location: 'Abu Dhabi, UAE', sector: 'GULF', meta: { ip: '192.168.9.102', protocol: 'ONVIF', encryption: 'None' } },
+  { id: 'TKY-S-09', source: 'https://assets.mixkit.co/videos/preview/mixkit-busy-street-in-a-japanese-city-at-night-4100-large.mp4', label: 'Shibuya Crossing // South', location: 'Tokyo, Japan', sector: 'ASIA', meta: { ip: '172.16.0.4', protocol: 'RTSP', encryption: 'Sovereign-v2' } },
+  { id: 'NYC-T-04', source: 'https://assets.mixkit.co/videos/preview/mixkit-times-square-at-night-with-bright-neon-signs-4102-large.mp4', label: 'Times Square // Sector 04', location: 'New York, USA', sector: 'WEST', meta: { ip: '10.0.5.99', protocol: 'RTSP', encryption: 'None' } },
+  { id: 'LDN-B-12', source: 'https://assets.mixkit.co/videos/preview/mixkit-bridge-in-the-city-at-night-with-bright-lights-4103-large.mp4', label: 'London Bridge // East Gate', location: 'London, UK', sector: 'WEST', meta: { ip: '192.168.12.5', protocol: 'ONVIF', encryption: 'SSL/TLS' } },
+  { id: 'SAT-L-09', source: 'https://assets.mixkit.co/videos/preview/mixkit-view-of-the-earth-from-space-4101-large.mp4', label: 'Low Orbit // Satellite Link', location: 'Orbital', sector: 'RECON', meta: { ip: '0.0.0.0', protocol: 'UPLINK', encryption: 'Quantum' } },
 ];
 
 export const CameraFeed = () => {
   const [activeIdx, setActiveIdx] = useState(0);
   const [isIntercepting, setIsIntercepting] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return <div className="h-full bg-black" />;
 
   const current = FEEDS[activeIdx];
 
@@ -44,14 +52,13 @@ export const CameraFeed = () => {
           setIsIntercepting(false);
           return 100;
         }
-        return p + 20;
+        return p + 25;
       });
-    }, 100);
+    }, 80);
   };
 
   return (
-    <div className="h-full bg-black flex flex-col font-mono overflow-hidden pointer-events-auto">
-      {/* Viewport */}
+    <div className="h-full bg-black flex flex-col font-mono overflow-hidden pointer-events-auto select-none">
       <div className="flex-1 relative bg-zinc-950 overflow-hidden">
         <AnimatePresence mode="wait">
           {isIntercepting ? (
@@ -61,7 +68,7 @@ export const CameraFeed = () => {
               className="absolute inset-0 flex flex-col items-center justify-center bg-black z-50"
             >
               <Crosshair size={40} className="text-neon-cyan animate-spin mb-4" />
-              <div className="text-[10px] text-neon-cyan font-bold tracking-[0.5em] mb-4 uppercase">Synchronizing_Uplink... {progress}%</div>
+              <div className="text-[10px] text-neon-cyan font-bold tracking-[0.5em] mb-4 uppercase">Intercepting_Uplink... {progress}%</div>
               <div className="w-64 h-1 bg-white/5 rounded-full overflow-hidden">
                 <div className="h-full bg-neon-cyan shadow-[0_0_15px_#00D4E5]" style={{ width: `${progress}%` }} />
               </div>
@@ -73,20 +80,12 @@ export const CameraFeed = () => {
               animate={{ opacity: 1 }}
               className="w-full h-full relative"
             >
-              {current.type === 'YOUTUBE' ? (
-                <iframe
-                  src={`https://www.youtube.com/embed/${current.source}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3`}
-                  className="w-full h-full grayscale contrast-[1.5] brightness-[0.7] scale-[1.15] pointer-events-none"
-                  frameBorder="0"
-                  allow="autoplay; encrypted-media"
-                />
-              ) : (
-                <video 
-                  src={current.source}
-                  autoPlay loop muted playsInline
-                  className="w-full h-full object-cover grayscale contrast-[1.6] brightness-[0.7] sepia-[0.3]"
-                />
-              )}
+              <video 
+                src={current.source}
+                autoPlay loop muted playsInline
+                key={current.source}
+                className="w-full h-full object-cover grayscale contrast-[1.6] brightness-[0.7] sepia-[0.3]"
+              />
               
               {/* Overlays */}
               <div className="absolute inset-0 pointer-events-none p-6 flex flex-col justify-between z-10">
@@ -125,26 +124,20 @@ export const CameraFeed = () => {
         </AnimatePresence>
       </div>
 
-      {/* Selector */}
-      <div className="h-32 bg-zinc-950 border-t border-white/10 p-3 flex gap-3 overflow-x-auto scrollbar-hide shrink-0">
+      {/* Selector Grid */}
+      <div className="h-28 bg-zinc-950 border-t border-white/10 p-2 flex gap-2 overflow-x-auto scrollbar-hide shrink-0">
         {FEEDS.map((f, idx) => (
           <button
             key={f.id}
             onClick={() => handleSwitch(idx)}
-            className={`relative flex-shrink-0 w-48 h-full rounded-lg border-2 transition-all overflow-hidden group ${
-              activeIdx === idx ? 'border-neon-cyan shadow-[0_0_20px_rgba(0,212,229,0.4)]' : 'border-white/5 opacity-40 grayscale hover:opacity-100'
+            className={`relative flex-shrink-0 w-44 h-full rounded border-2 transition-all overflow-hidden group ${
+              activeIdx === idx ? 'border-neon-cyan shadow-[0_0_15px_rgba(0,212,229,0.3)]' : 'border-white/5 opacity-40 grayscale hover:opacity-100'
             }`}
           >
-            {f.type === 'VIDEO' ? (
-              <video src={f.source} muted className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
-                <Signal size={24} className="text-white/10" />
-              </div>
-            )}
-            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-3 text-center">
-              <span className="text-[10px] text-white font-black uppercase tracking-tighter leading-tight mb-1">{f.label}</span>
-              <span className="text-[7px] text-neon-cyan/80 font-bold tracking-widest">{f.id}</span>
+            <video src={f.source} muted className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-3 text-center z-10">
+              <span className="text-[8px] text-white font-black uppercase tracking-tighter leading-tight mb-1">{f.label}</span>
+              <span className="text-[6px] text-neon-cyan/80 font-bold tracking-[0.3em]">{f.id}</span>
             </div>
           </button>
         ))}
