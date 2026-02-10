@@ -20,7 +20,8 @@ import {
   ShieldAlert,
   Cpu,
   Lock,
-  Zap
+  Zap,
+  Scan
 } from 'lucide-react';
 
 export const Desktop = () => {
