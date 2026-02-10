@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Eye, Database, Activity, Scan, Signal, Lock, Crosshair } from 'lucide-react';
 
@@ -9,7 +9,7 @@ interface Feed {
   source: string;
   label: string;
   location: string;
-  sector: 'GULF' | 'ASIA' | 'WEST' | 'RECON';
+  type: 'YOUTUBE' | 'VIDEO';
   meta: {
     ip: string;
     protocol: string;
@@ -18,12 +18,12 @@ interface Feed {
 }
 
 const FEEDS: Feed[] = [
-  { id: 'DXB-C-01', source: 'https://assets.mixkit.co/videos/preview/mixkit-city-traffic-at-night-1070-large.mp4', label: 'Dubai Marina // North Gate', location: 'Dubai, UAE', sector: 'GULF', meta: { ip: '192.168.4.12', protocol: 'RTSP', encryption: 'AES-256' } },
-  { id: 'AUH-C-03', source: 'https://assets.mixkit.co/videos/preview/mixkit-top-view-of-a-city-at-night-1075-large.mp4', label: 'Corniche // Abu Dhabi', location: 'Abu Dhabi, UAE', sector: 'GULF', meta: { ip: '192.168.9.102', protocol: 'ONVIF', encryption: 'None' } },
-  { id: 'TKY-S-09', source: 'https://assets.mixkit.co/videos/preview/mixkit-busy-street-in-a-japanese-city-at-night-4100-large.mp4', label: 'Shibuya Crossing // South', location: 'Tokyo, Japan', sector: 'ASIA', meta: { ip: '172.16.0.4', protocol: 'RTSP', encryption: 'Sovereign-v2' } },
-  { id: 'NYC-T-04', source: 'https://assets.mixkit.co/videos/preview/mixkit-times-square-at-night-with-bright-neon-signs-4102-large.mp4', label: 'Times Square // Sector 04', location: 'New York, USA', sector: 'WEST', meta: { ip: '10.0.5.99', protocol: 'RTSP', encryption: 'None' } },
-  { id: 'LDN-B-12', source: 'https://assets.mixkit.co/videos/preview/mixkit-bridge-in-the-city-at-night-with-bright-lights-4103-large.mp4', label: 'London Bridge // East Gate', location: 'London, UK', sector: 'WEST', meta: { ip: '192.168.12.5', protocol: 'ONVIF', encryption: 'SSL/TLS' } },
-  { id: 'SAT-L-09', source: 'https://assets.mixkit.co/videos/preview/mixkit-view-of-the-earth-from-space-4101-large.mp4', label: 'Low Orbit // Satellite Link', location: 'Orbital', sector: 'RECON', meta: { ip: '0.0.0.0', protocol: 'UPLINK', encryption: 'Quantum' } },
+  // Verified Live Links
+  { id: 'MAK-LIVE', source: 'https://www.youtube.com/embed/3_Xp1431YpI?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3', label: 'Masjid al-Haram // Kaaba', location: 'Makkah, KSA', type: 'YOUTUBE', meta: { ip: '10.0.8.44', protocol: 'RTSP', encryption: 'Sovereign-v1' } },
+  { id: 'DXB-RECON', source: 'https://www.youtube.com/embed/yv_YtP9XU6w?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3', label: 'Dubai Marina // South', location: 'Dubai, UAE', type: 'YOUTUBE', meta: { ip: '192.168.4.12', protocol: 'HTTP-FLV', encryption: 'AES-256' } },
+  { id: 'TKY-SHIBUYA', source: 'https://www.youtube.com/embed/HpdO5Kq3o7Y?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3', label: 'Shibuya Crossing // South', location: 'Tokyo, Japan', type: 'YOUTUBE', meta: { ip: '172.16.0.4', protocol: 'RTSP', encryption: 'Sovereign-v2' } },
+  { id: 'NYC-TIMES', source: 'https://www.youtube.com/embed/1-iS7LArMPA?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3', label: 'Times Square // Sector 04', location: 'New York, USA', type: 'YOUTUBE', meta: { ip: '10.0.5.99', protocol: 'RTSP', encryption: 'None' } },
+  { id: 'ORB-LINK', source: 'https://cdn.coverr.co/videos/preview/720/coverr-view-of-earth-from-space-8451.mp4', label: 'Orbital Satellite // Link', location: 'Low Orbit', type: 'VIDEO', meta: { ip: '0.0.0.0', protocol: 'UPLINK', encryption: 'Quantum' } },
 ];
 
 export const CameraFeed = () => {
@@ -35,8 +35,6 @@ export const CameraFeed = () => {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  if (!mounted) return <div className="h-full bg-black" />;
 
   const current = FEEDS[activeIdx];
 
@@ -52,13 +50,16 @@ export const CameraFeed = () => {
           setIsIntercepting(false);
           return 100;
         }
-        return p + 25;
+        return p + 20;
       });
-    }, 80);
+    }, 100);
   };
+
+  if (!mounted) return <div className="h-full bg-black" />;
 
   return (
     <div className="h-full bg-black flex flex-col font-mono overflow-hidden pointer-events-auto select-none">
+      {/* Viewport */}
       <div className="flex-1 relative bg-zinc-950 overflow-hidden">
         <AnimatePresence mode="wait">
           {isIntercepting ? (
@@ -68,7 +69,9 @@ export const CameraFeed = () => {
               className="absolute inset-0 flex flex-col items-center justify-center bg-black z-50"
             >
               <Crosshair size={40} className="text-neon-cyan animate-spin mb-4" />
-              <div className="text-[10px] text-neon-cyan font-bold tracking-[0.5em] mb-4 uppercase">Intercepting_Uplink... {progress}%</div>
+              <div className="text-[10px] text-neon-cyan font-bold tracking-[0.5em] mb-4 uppercase text-center px-10">
+                Bypassing_Satellite_Encryption... {progress}%
+              </div>
               <div className="w-64 h-1 bg-white/5 rounded-full overflow-hidden">
                 <div className="h-full bg-neon-cyan shadow-[0_0_15px_#00D4E5]" style={{ width: `${progress}%` }} />
               </div>
@@ -76,37 +79,44 @@ export const CameraFeed = () => {
           ) : (
             <motion.div 
               key={current.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="w-full h-full relative"
             >
-              <video 
-                src={current.source}
-                autoPlay loop muted playsInline
-                key={current.source}
-                className="w-full h-full object-cover grayscale contrast-[1.6] brightness-[0.7] sepia-[0.3]"
-              />
+              {current.type === 'YOUTUBE' ? (
+                <iframe
+                  src={current.source}
+                  className="w-full h-full grayscale contrast-[1.5] brightness-[0.7] scale-[1.15] pointer-events-none"
+                  frameBorder="0"
+                  allow="autoplay; encrypted-media"
+                />
+              ) : (
+                <video 
+                  src={current.source}
+                  autoPlay loop muted playsInline
+                  className="w-full h-full object-cover grayscale contrast-[1.6] brightness-[0.7] sepia-[0.3]"
+                />
+              )}
               
-              {/* Overlays */}
+              {/* Tactical Overlays */}
               <div className="absolute inset-0 pointer-events-none p-6 flex flex-col justify-between z-10">
                 <div className="flex justify-between items-start">
                   <div className="bg-black/70 backdrop-blur-xl p-4 border-l-4 border-neon-cyan rounded-r-lg">
-                    <div className="text-[11px] text-red-500 font-black flex items-center gap-2 mb-1">
-                      <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse" /> LIVE_RECON: {current.id}
+                    <div className="text-[11px] text-red-500 font-black flex items-center gap-2 mb-1 uppercase tracking-widest">
+                      <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse" /> Live_Intercept: {current.id}
                     </div>
                     <div className="text-lg text-white font-black tracking-widest uppercase">{current.label}</div>
-                    <div className="text-[10px] text-neon-cyan/80 font-bold uppercase mt-1">LOC: {current.location}</div>
+                    <div className="text-[10px] text-neon-cyan/80 font-bold uppercase mt-1 tracking-widest">LOC: {current.location}</div>
                   </div>
                   <div className="bg-black/60 backdrop-blur-xl p-4 border border-white/10 rounded-lg text-right">
                     <div className="text-sm text-neon-cyan font-black mb-1">{new Date().toLocaleTimeString()}</div>
-                    <div className="text-[8px] text-white/40 tracking-widest uppercase font-bold">Enc: {current.meta.encryption}</div>
+                    <div className="text-[8px] text-white/40 tracking-widest uppercase font-bold">PROTO: {current.meta.protocol}</div>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-end">
                   <div className="w-24 h-24 border-l-2 border-b-2 border-white/20 rounded-bl-[30px]" />
                   <div className="flex flex-col items-center">
-                     <div className="text-[10px] text-neon-cyan/40 mb-3 uppercase tracking-[1em] font-black">Scanning...</div>
+                     <div className="text-[10px] text-neon-cyan/40 mb-3 uppercase tracking-[1em] font-black">Analyzing...</div>
                      <div className="flex gap-1 items-end h-6">
                         {[...Array(8)].map((_, i) => (
                           <motion.div key={i} animate={{ height: [4, 16, 6, 20, 8] }} transition={{ duration: 1 + Math.random(), repeat: Infinity }} className="w-1 bg-neon-cyan/30" />
@@ -124,21 +134,21 @@ export const CameraFeed = () => {
         </AnimatePresence>
       </div>
 
-      {/* Selector Grid */}
-      <div className="h-28 bg-zinc-950 border-t border-white/10 p-2 flex gap-2 overflow-x-auto scrollbar-hide shrink-0">
+      {/* Selector */}
+      <div className="h-32 bg-zinc-950 border-t border-white/10 p-3 flex gap-3 overflow-x-auto scrollbar-hide shrink-0">
         {FEEDS.map((f, idx) => (
           <button
             key={f.id}
             onClick={() => handleSwitch(idx)}
-            className={`relative flex-shrink-0 w-44 h-full rounded border-2 transition-all overflow-hidden group ${
-              activeIdx === idx ? 'border-neon-cyan shadow-[0_0_15px_rgba(0,212,229,0.3)]' : 'border-white/5 opacity-40 grayscale hover:opacity-100'
+            className={`relative flex-shrink-0 w-48 h-full rounded-lg border-2 transition-all overflow-hidden group ${
+              activeIdx === idx ? 'border-neon-cyan shadow-[0_0_20px_rgba(0,212,229,0.4)]' : 'border-white/5 opacity-40 grayscale hover:opacity-100'
             }`}
           >
-            <video src={f.source} muted className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-3 text-center z-10">
-              <span className="text-[8px] text-white font-black uppercase tracking-tighter leading-tight mb-1">{f.label}</span>
-              <span className="text-[6px] text-neon-cyan/80 font-bold tracking-[0.3em]">{f.id}</span>
+              <span className="text-[10px] text-white font-black uppercase tracking-tighter leading-tight mb-1">{f.label}</span>
+              <span className="text-[7px] text-neon-cyan/80 font-bold tracking-widest">{f.id}</span>
             </div>
+            {f.type === 'YOUTUBE' ? <div className="w-full h-full bg-zinc-900" /> : <video src={f.source} muted className="w-full h-full object-cover" />}
           </button>
         ))}
       </div>

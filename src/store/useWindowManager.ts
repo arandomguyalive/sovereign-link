@@ -30,7 +30,7 @@ export const useWindowManager = create<WindowState>((set) => ({
     wifi: { id: 'wifi', title: 'WIFI_SNIFFER v2.1', isOpen: false, isMaximized: false, zIndex: 1, width: 600, height: 400, x: 150, y: 150 },
     network: { id: 'network', title: 'LOCAL_NETWORK_MAP', isOpen: false, isMaximized: false, zIndex: 1, width: 600, height: 400, x: 200, y: 200 },
     cracker: { id: 'cracker', title: 'HYDRA_FORCE // BRUTE', isOpen: false, isMaximized: false, zIndex: 1, width: 500, height: 450, x: 250, y: 250 },
-    map: { id: 'map', title: 'GEO_TRACE', isOpen: false, isMaximized: false, zIndex: 1, width: 800, height: 500, x: 300, y: 300 },
+    map: { id: 'map', title: 'TACTICAL_MAP // DUBAI_CORE', isOpen: false, isMaximized: false, zIndex: 1, width: 900, height: 600, x: 50, y: 50 },
   },
   activeWindow: 'camera',
   openWindow: (id) => set((state) => {

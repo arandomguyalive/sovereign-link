@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import { useWindowManager, AppId } from '@/store/useWindowManager';
-import { X, Minus, Square } from 'lucide-react';
+import { X, Minus, Square, Maximize2 } from 'lucide-react';
 
 interface WindowProps {
   id: AppId;
@@ -13,15 +13,17 @@ interface WindowProps {
 export const Window: React.FC<WindowProps> = ({ id, title, children }) => {
   const { windows, closeWindow, focusWindow, activeWindow, updateWindow } = useWindowManager();
   const win = windows[id];
-  const windowRef = useRef<HTMLDivElement>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   if (!win.isOpen) return null;
 
   const startDrag = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
-    const target = e.target as HTMLElement;
-    if (target.closest('button')) return; // Don't drag if clicking buttons
+    // Don't drag if clicking controls
+    if ((e.target as HTMLElement).closest('.window-control')) return;
 
+    setIsDragging(true);
     focusWindow(id);
     
     const startX = e.clientX - win.x;
@@ -35,6 +37,7 @@ export const Window: React.FC<WindowProps> = ({ id, title, children }) => {
     };
 
     const onMouseUp = () => {
+      setIsDragging(false);
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
     };
@@ -46,6 +49,7 @@ export const Window: React.FC<WindowProps> = ({ id, title, children }) => {
   const startResize = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    setIsResizing(true);
     
     const startX = e.clientX;
     const startY = e.clientY;
@@ -60,6 +64,7 @@ export const Window: React.FC<WindowProps> = ({ id, title, children }) => {
     };
 
     const onMouseUp = () => {
+      setIsResizing(false);
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
     };
@@ -68,28 +73,35 @@ export const Window: React.FC<WindowProps> = ({ id, title, children }) => {
     document.addEventListener('mouseup', onMouseUp);
   };
 
+  const toggleMaximize = () => {
+    if (win.isMaximized) {
+      updateWindow(id, { isMaximized: false, width: 800, height: 500, x: 100, y: 100 });
+    } else {
+      updateWindow(id, { isMaximized: true, width: window.innerWidth, height: window.innerHeight - 40, x: 0, y: 0 });
+    }
+  };
+
   return (
     <div
-      ref={windowRef}
       onMouseDown={() => focusWindow(id)}
-      className={`absolute flex flex-col rounded-xl overflow-hidden pointer-events-auto border shadow-2xl ${
+      className={`absolute flex flex-col rounded-xl overflow-hidden pointer-events-auto border shadow-2xl transition-[border-color,box-shadow] duration-200 ${
         activeWindow === id ? 'border-neon-cyan/50 ring-1 ring-neon-cyan/20 z-[600]' : 'border-white/10 z-[500] opacity-90'
-      }`}
+      } ${win.isMaximized ? 'rounded-none' : ''}`}
       style={{
-        left: win.x,
-        top: win.y,
-        width: win.width,
-        height: win.height,
-        backgroundColor: 'rgba(5, 5, 5, 0.9)',
-        backdropFilter: 'blur(16px)',
+        left: win.isMaximized ? 0 : win.x,
+        top: win.isMaximized ? 0 : win.y,
+        width: win.isMaximized ? '100vw' : win.width,
+        height: win.isMaximized ? 'calc(100vh - 40px)' : win.height,
+        backgroundColor: 'rgba(5, 5, 5, 0.95)',
+        backdropFilter: 'blur(20px)',
       }}
     >
       {/* Title Bar */}
       <div 
         onMouseDown={startDrag}
-        className="h-11 bg-zinc-900/95 border-b border-white/10 flex items-center justify-between px-4 cursor-grab active:cursor-grabbing shrink-0"
+        className="h-11 bg-zinc-900 border-b border-white/10 flex items-center justify-between px-4 cursor-grab active:cursor-grabbing shrink-0"
       >
-        <div className="flex items-center gap-3 pointer-events-none">
+        <div className="flex items-center gap-3">
           <div className={`w-2 h-2 rounded-full ${activeWindow === id ? 'bg-neon-cyan animate-pulse shadow-[0_0_8px_#00D4E5]' : 'bg-zinc-700'}`} />
           <span className={`text-[11px] uppercase tracking-[0.3em] font-black ${
             activeWindow === id ? 'text-neon-cyan' : 'text-zinc-500'
@@ -97,15 +109,24 @@ export const Window: React.FC<WindowProps> = ({ id, title, children }) => {
             {title}
           </span>
         </div>
-        <div className="flex gap-4">
-          <button className="text-zinc-500 hover:text-white transition-colors"><Minus size={16} /></button>
-          <button className="text-zinc-500 hover:text-white transition-colors"><Square size={14} /></button>
+        <div className="flex gap-2 items-center">
           <button 
-            onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); closeWindow(id); }}
-            className="text-zinc-500 hover:text-neon-pink transition-colors p-1"
+            className="window-control text-zinc-500 hover:text-white transition-colors p-1.5 hover:bg-white/5 rounded"
           >
-            <X size={20} />
+            <Minus size={16} />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); toggleMaximize(); }}
+            className="window-control text-zinc-500 hover:text-white transition-colors p-1.5 hover:bg-white/5 rounded"
+          >
+            <Maximize2 size={14} />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); closeWindow(id); }}
+            className="window-control text-zinc-500 hover:text-neon-pink transition-colors p-1.5 hover:bg-neon-pink/10 rounded"
+          >
+            <X size={18} />
           </button>
         </div>
       </div>
@@ -115,13 +136,15 @@ export const Window: React.FC<WindowProps> = ({ id, title, children }) => {
         {children}
       </div>
 
-      {/* Resize Handle */}
-      <div 
-        onMouseDown={startResize}
-        className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize flex items-end justify-end p-1 z-[100]"
-      >
-        <div className="w-3 h-3 border-r-2 border-b-2 border-neon-cyan/30" />
-      </div>
+      {/* Resize Handle - Only show if not maximized */}
+      {!win.isMaximized && (
+        <div 
+          onMouseDown={startResize}
+          className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize flex items-end justify-end p-1 z-[100]"
+        >
+          <div className="w-3 h-3 border-r-2 border-b-2 border-neon-cyan/30" />
+        </div>
+      )}
     </div>
   );
 };

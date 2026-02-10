@@ -9,6 +9,7 @@ import { CameraFeed } from '@/components/modules/CameraFeed';
 import { WiFiSniffer } from '@/components/modules/WiFiSniffer';
 import { HydraCracker } from '@/components/modules/HydraCracker';
 import { NetworkMap } from '@/components/modules/NetworkMap';
+import { DubaiTacticalMap } from '@/components/modules/DubaiTacticalMap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Terminal as TerminalIcon, 
@@ -69,7 +70,7 @@ const SovereignDesktop = () => {
     { id: 'wifi', icon: Wifi, label: 'WiFi Sniffer' },
     { id: 'network', icon: Share2, label: 'Net Map' },
     { id: 'cracker', icon: Shield, label: 'Hydra' },
-    { id: 'map', icon: Map, label: 'GeoTrace' },
+    { id: 'map', icon: Map, label: 'Dubai Map' },
   ];
 
   if (isBooting) {
@@ -104,30 +105,7 @@ const SovereignDesktop = () => {
       <div className="absolute inset-0 opacity-20 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
       <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/5 via-transparent to-neon-cyan/5 pointer-events-none" />
       
-      {/* Window Layer - Primary interaction zone */}
-      <div className="absolute inset-0 z-[500] pointer-events-none">
-        {Object.values(windows).map((win) => {
-          if (!win.isOpen) return null;
-          return (
-            <Window key={win.id} id={win.id} title={win.title}>
-              {win.id === 'terminal' && <Terminal />}
-              {win.id === 'camera' && <CameraFeed />}
-              {win.id === 'wifi' && <WiFiSniffer />}
-              {win.id === 'cracker' && <HydraCracker />}
-              {win.id === 'network' && <NetworkMap />}
-              {win.id === 'map' && (
-                <div className="w-full h-full bg-black flex flex-col items-center justify-center p-10 text-center">
-                  <Scan size={48} className="text-neon-cyan animate-pulse mb-4" />
-                  <h3 className="text-neon-cyan text-sm font-black uppercase tracking-[0.3em]">Geo-Trace Protocol</h3>
-                  <p className="text-[10px] text-white/40 mt-2 uppercase tracking-widest">Awaiting Uplink Synchronization...</p>
-                </div>
-              )}
-            </Window>
-          );
-        })}
-      </div>
-
-      {/* Desktop Icons Layer - Higher Z to ensure they stay on top of the background but below active windows */}
+      {/* 1. Desktop Icons Layer - Bottom Layer */}
       <div className="absolute top-10 left-10 grid grid-cols-1 gap-6 z-[100] pointer-events-none">
         {icons.map((item) => (
           <button
@@ -145,7 +123,22 @@ const SovereignDesktop = () => {
         ))}
       </div>
 
-      {/* Status Bar */}
+      {/* 2. Windows Layer - Renders ON TOP of icons */}
+      {Object.values(windows).map((win) => {
+        if (!win.isOpen) return null;
+        return (
+          <Window key={win.id} id={win.id} title={win.title}>
+            {win.id === 'terminal' && <Terminal />}
+            {win.id === 'camera' && <CameraFeed />}
+            {win.id === 'wifi' && <WiFiSniffer />}
+            {win.id === 'cracker' && <HydraCracker />}
+            {win.id === 'network' && <NetworkMap />}
+            {win.id === 'map' && <DubaiTacticalMap />}
+          </Window>
+        );
+      })}
+
+      {/* 3. Status Bar Layer - Highest Z-index */}
       <div className="absolute bottom-0 left-0 w-full h-10 glass-panel border-t border-white/10 flex items-center justify-between px-6 z-[1000] bg-black/40 backdrop-blur-md">
         <div className="flex gap-8 items-center">
           <div className="flex items-center gap-3">
@@ -159,11 +152,12 @@ const SovereignDesktop = () => {
         </div>
         <div className="flex gap-8 items-center">
           <Zap size={14} className="text-neon-orange" />
+          <span className="text-[10px] text-white/60 font-black uppercase tracking-widest">98.4%</span>
           <span className="text-[11px] text-white font-black tracking-tighter">{time}</span>
         </div>
       </div>
 
-      {/* Trace Level */}
+      {/* Trace Level Overlay */}
       <div className="absolute top-10 right-10 w-80 h-20 glass-panel p-4 z-[1000] border-l-4 border-neon-cyan shadow-2xl pointer-events-none">
         <div className="flex justify-between text-[11px] uppercase tracking-[0.2em] font-black">
           <span className={traceLevel > 70 ? "text-neon-pink animate-pulse" : "text-neon-cyan"}>
