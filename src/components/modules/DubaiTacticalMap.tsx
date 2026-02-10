@@ -132,6 +132,27 @@ const DubaiRealMap = ({ onInspect }: any) => (
   </group>
 );
 
+const NycRealMap = ({ onInspect }: any) => (
+  <group>
+    {/* One World Trade Center */}
+    <group position={[0, 0, 0]} onClick={(e) => { e.stopPropagation(); onInspect({ type: 'INFRASTRUCTURE', id: 'WTC_CORE', name: 'One World Trade Center' }); }}>
+      <mesh position={[0, 12, 0]}>
+        <cylinderGeometry args={[0, 2, 24, 4]} />
+        <meshStandardMaterial color="#111" />
+        <lineSegments><edgesGeometry args={[new THREE.CylinderGeometry(0, 2, 24, 4)]} /><lineBasicMaterial color={COLORS.cyan} /></lineSegments>
+      </mesh>
+    </group>
+    {/* Empire State Building */}
+    <group position={[15, 0, -10]} onClick={(e) => { e.stopPropagation(); onInspect({ type: 'INFRASTRUCTURE', id: 'ESB_NET', name: 'Empire State Building' }); }}>
+      <mesh position={[0, 10, 0]}>
+        <boxGeometry args={[3, 20, 3]} />
+        <meshStandardMaterial color="#050505" />
+        <lineSegments><edgesGeometry args={[new THREE.BoxGeometry(3, 20, 3)]} /><lineBasicMaterial color={COLORS.cyan} opacity={0.4} transparent /></lineSegments>
+      </mesh>
+    </group>
+  </group>
+);
+
 const LondonMap = ({ onInspect }: any) => (
   <group>
     <mesh position={[0, 10, 0]} onClick={(e) => { e.stopPropagation(); onInspect({ type: 'INFRASTRUCTURE', id: 'SHARD_OS', name: 'The Shard' }); }}>
@@ -206,11 +227,15 @@ export const DubaiTacticalMap = () => {
   useEffect(() => { setMounted(true); }, []);
 
   const handleSatHack = (id: string) => {
+    const cityMap: Record<string, 'DUBAI' | 'NYC' | 'LDN' | 'NEOM'> = {
+      'KH-11': 'DUBAI',
+      'SENTINEL-6': 'NYC',
+      'EYE-1': 'LDN',
+      'NEOM-CORE': 'NEOM'
+    };
+
     if (crackedSats.includes(id)) {
-      if (id === 'KH-11') setView('DUBAI');
-      if (id === 'SENTINEL-6') setView('NYC');
-      if (id === 'EYE-1') setView('LDN');
-      if (id === 'NEOM-CORE') setView('NEOM');
+      setView(cityMap[id]);
       return;
     }
 
@@ -221,6 +246,7 @@ export const DubaiTacticalMap = () => {
     
     setTimeout(() => {
       setCrackedSats(prev => [...prev, id]);
+      setView(cityMap[id]);
       addLog(`[SUCCESS] SATELLITE ${id} COMPROMISED. DOWNLINK ACTIVE.`, 'success');
     }, 2500);
   };
@@ -258,7 +284,7 @@ export const DubaiTacticalMap = () => {
             {view === 'DUBAI' && <DubaiRealMap onInspect={setSelectedTarget} />}
             {view === 'LDN' && <LondonMap onInspect={setSelectedTarget} />}
             {view === 'NEOM' && <NeomMap onInspect={setSelectedTarget} />}
-            {view === 'NYC' && <LondonMap onInspect={setSelectedTarget} />} {/* Placeholder for NYC reuse */}
+            {view === 'NYC' && <NycRealMap onInspect={setSelectedTarget} />}
             
             <group>
               {[...Array(50)].map((_, i) => (
