@@ -49,4 +49,12 @@ GHOST_OS is a high-fidelity, geospatial tactical simulation designed for elite o
 - Hardened the architecture to eliminate React hydration errors (#418) and memory leaks.
 
 ---
-*Status: GHOST_OS v25.1 DEPLOYED AND STABLE.*
+*Status: GHOST_OS v25.2 - GOD-EYE RESTORED.*
+
+### Phase 8: God-Eye Restoration (Feb 11, 2026)
+- **Landmark Reconstruction:** Fully implemented Burj Khalifa, Burj Al Arab, and Ain Dubai with high-fidelity wireframes.
+- **Geospatial Optimization:** Re-engineered Palm Jumeirah with accurate radial symmetry.
+- **Neural-Grid Deployment:** Added high-density ground wireframes for superior tactical depth.
+- **Agent Scaling:** Increased SIGINT Lidar agent count to 40 with active MAC/IMEI spoofing signatures.
+- **Traffic Simulation:** Integrated Catmull-Rom curves for multi-artery metropolitan traffic light trails.
+- **Interface Hardening:** Verified Deep Scan integration for all structure-class targets.

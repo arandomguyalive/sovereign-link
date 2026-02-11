@@ -147,6 +147,150 @@ const IntelligenceSidebar = ({ target, isBreached, onClose }: any) => {
   );
 };
 
+// --- LANDMARKS ---
+const BurjKhalifa = ({ onSelect }: any) => (
+  <group position={[0, 0, 0]} onClick={(e) => { e.stopPropagation(); onSelect({ id: 'BURJ_KHALIFA', type: 'STRUCTURE', height: '828m' }); }}>
+    <mesh position={[0, 10, 0]}><cylinderGeometry args={[1, 1.5, 20, 3]} /><meshStandardMaterial color={COLORS.cyan} wireframe /></mesh>
+    <mesh position={[0, 25, 0]}><cylinderGeometry args={[0.7, 1, 15, 3]} /><meshStandardMaterial color={COLORS.cyan} wireframe /></mesh>
+    <mesh position={[0, 40, 0]}><cylinderGeometry args={[0.4, 0.7, 20, 3]} /><meshStandardMaterial color={COLORS.cyan} wireframe /></mesh>
+    <mesh position={[0, 55, 0]}><cylinderGeometry args={[0.1, 0.4, 15, 3]} /><meshStandardMaterial color={COLORS.cyan} wireframe /></mesh>
+    <mesh position={[0, 65, 0]}><cylinderGeometry args={[0.01, 0.1, 10, 3]} /><meshStandardMaterial color={COLORS.cyan} wireframe /></mesh>
+    <Html position={[0, 75, 0]} center>
+      <div className="text-[10px] text-neon-cyan font-black bg-black/80 px-2 border border-neon-cyan whitespace-nowrap uppercase italic">Burj Khalifa // Primary Hub</div>
+    </Html>
+  </group>
+);
+
+const BurjAlArab = ({ onSelect }: any) => (
+  <group position={[-40, 0, 20]} rotation={[0, Math.PI / 4, 0]} onClick={(e) => { e.stopPropagation(); onSelect({ id: 'BURJ_AL_ARAB', type: 'STRUCTURE', status: 'PROTECTED' }); }}>
+    <mesh position={[0, 10, 0]}><boxGeometry args={[1, 20, 8]} /><meshStandardMaterial color={COLORS.cyan} wireframe /></mesh>
+    <mesh position={[2, 10, 0]} rotation={[0, 0, -0.1]}><planeGeometry args={[10, 18]} /><meshStandardMaterial color={COLORS.cyan} wireframe side={THREE.DoubleSide} /></mesh>
+    <Html position={[0, 22, 0]} center>
+      <div className="text-[8px] text-neon-cyan font-black bg-black/80 px-2 border border-neon-cyan whitespace-nowrap uppercase">Burj Al Arab</div>
+    </Html>
+  </group>
+);
+
+const PalmJumeirah = () => (
+  <group position={[-60, 0, -30]}>
+    {Array.from({ length: 16 }).map((_, i) => (
+      <mesh key={i} rotation={[-Math.PI / 2, 0, (i * Math.PI) / 8]} position={[0, 0.1, 0]}>
+        <planeGeometry args={[1, 35]} />
+        <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.4} />
+      </mesh>
+    ))}
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+      <ringGeometry args={[32, 35, 64]} />
+      <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.3} />
+    </mesh>
+  </group>
+);
+
+const AinDubai = ({ onSelect }: any) => (
+  <group position={[-50, 0, 40]} onClick={(e) => { e.stopPropagation(); onSelect({ id: 'AIN_DUBAI', type: 'STRUCTURE', status: 'MONITORED' }); }}>
+    <mesh rotation={[0, Math.PI / 2, 0]} position={[0, 15, 0]}>
+      <torusGeometry args={[15, 0.2, 16, 100]} />
+      <meshStandardMaterial color={COLORS.cyan} wireframe />
+    </mesh>
+    <mesh position={[0, 7.5, 2]}>
+      <boxGeometry args={[1, 15, 1]} />
+      <meshStandardMaterial color={COLORS.cyan} wireframe />
+    </mesh>
+    <mesh position={[0, 7.5, -2]}>
+      <boxGeometry args={[1, 15, 1]} />
+      <meshStandardMaterial color={COLORS.cyan} wireframe />
+    </mesh>
+    <Html position={[0, 32, 0]} center>
+      <div className="text-[8px] text-neon-cyan font-black bg-black/80 px-2 border border-neon-cyan whitespace-nowrap uppercase">Ain Dubai // Observational Node</div>
+    </Html>
+  </group>
+);
+
+const NeuralGrid = () => (
+  <group>
+    <gridHelper args={[2000, 100, COLORS.cyan, '#111']} position={[0, -0.4, 0]} />
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
+      <planeGeometry args={[2000, 2000]} />
+      <meshBasicMaterial color="#000" />
+    </mesh>
+  </group>
+);
+
+const TrafficTrails = () => {
+  const points = useMemo(() => {
+    return Array.from({ length: 5 }).map(() => {
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-200, 0.2, (Math.random() - 0.5) * 400),
+        new THREE.Vector3(0, 0.2, (Math.random() - 0.5) * 100),
+        new THREE.Vector3(200, 0.2, (Math.random() - 0.5) * 400),
+      ]);
+      return curve;
+    });
+  }, []);
+
+  return (
+    <group>
+      {points.map((curve, i) => (
+        <TrafficTrail key={i} curve={curve} color={i % 2 === 0 ? COLORS.cyan : COLORS.gold} />
+      ))}
+    </group>
+  );
+};
+
+const TrafficTrail = ({ curve, color }: any) => {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    if (ref.current) {
+      const t = (clock.getElapsedTime() * 0.1) % 1;
+      const pos = curve.getPointAt(t);
+      ref.current.position.copy(pos);
+    }
+  });
+
+  return (
+    <>
+      <mesh>
+        <tubeGeometry args={[curve, 100, 0.1, 8, false]} />
+        <meshBasicMaterial color={color} transparent opacity={0.1} />
+      </mesh>
+      <mesh ref={ref}>
+        <sphereGeometry args={[0.5, 8, 8]} />
+        <meshBasicMaterial color={color} />
+        <pointLight intensity={2} distance={10} color={color} />
+      </mesh>
+    </>
+  );
+};
+
+const LidarAgent = ({ id, position, onSelect }: any) => {
+  const ref = useRef<THREE.Group>(null);
+  const [targetPos] = useState(() => new THREE.Vector3(
+    position[0] + (Math.random() - 0.5) * 50,
+    0,
+    position[2] + (Math.random() - 0.5) * 50
+  ));
+
+  useFrame(({ clock }) => {
+    if (ref.current) {
+      ref.current.position.x += Math.sin(clock.getElapsedTime() * 0.5 + id) * 0.05;
+      ref.current.position.z += Math.cos(clock.getElapsedTime() * 0.5 + id) * 0.05;
+      ref.current.rotation.y = clock.getElapsedTime();
+    }
+  });
+
+  return (
+    <group ref={ref} position={position} onClick={(e) => { e.stopPropagation(); onSelect({ id, type: 'CIVILIAN_AGENT', mac: `00:AB:45:${id}:FF` }); }}>
+      <mesh position={[0, 1, 0]}><boxGeometry args={[0.5, 2, 0.5]} /><meshStandardMaterial color={COLORS.purple} wireframe /></mesh>
+      <mesh position={[0, 2.5, 0]}><sphereGeometry args={[0.3, 8, 8]} /><meshStandardMaterial color={COLORS.purple} wireframe /></mesh>
+      <Html distanceFactor={20} position={[0, 3.5, 0]} center>
+        <div className="text-[6px] text-purple-400 font-bold bg-black/80 px-1 border border-purple-500/50 whitespace-nowrap uppercase">
+          SIGINT_{id} // {id % 2 === 0 ? 'ACTIVE' : 'IDLE'}
+        </div>
+      </Html>
+    </group>
+  );
+};
+
 // --- RECON ENGINE ---
 export const DubaiTacticalMap = () => {
   const { openWindow, updateWindow } = useWindowManager();
@@ -177,15 +321,15 @@ export const DubaiTacticalMap = () => {
   return (
     <div className="w-full h-full bg-black relative cursor-crosshair overflow-hidden pointer-events-auto select-none touch-none">
       <Canvas shadows dpr={[1, 2]} gl={{ antialias: false }}>
-        <PerspectiveCamera makeDefault position={view === 'ORBIT' ? [0, 0, 35] : [0, 60, 80]} fov={view === 'ORBIT' ? 45 : 40} />
+        <PerspectiveCamera makeDefault position={view === 'ORBIT' ? [0, 0, 35] : [0, 100, 150]} fov={view === 'ORBIT' ? 45 : 40} />
         <MapControls 
           enableDamping dampingFactor={0.05} 
-          minDistance={5} maxDistance={500} 
+          minDistance={5} maxDistance={1200} 
           screenSpacePanning={true}
         />
-        <Stars radius={300} count={15000} factor={4} fade />
-        <ambientLight intensity={0.3} />
-        <pointLight position={[50, 100, 50]} intensity={2} color={COLORS.cyan} />
+        <Stars radius={500} count={20000} factor={4} fade />
+        <ambientLight intensity={0.5} />
+        <pointLight position={[100, 200, 100]} intensity={2.5} color={COLORS.cyan} />
 
         {view === 'ORBIT' ? (
           <EarthSystem onSelectSat={(city: string) => {
@@ -196,23 +340,30 @@ export const DubaiTacticalMap = () => {
           }} />
         ) : (
           <group>
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
-              <planeGeometry args={[1000, 1000, 100, 100]} />
-              <meshBasicMaterial color="#050505" wireframe opacity={0.1} transparent />
-            </mesh>
-            {/* Generic Target Node for Demo */}
-            <mesh position={[0, 5, 0]} onClick={() => setSelectedTarget({ id: 'BURJ_CORE', type: 'INFRASTRUCTURE' })}>
-              <cylinderGeometry args={[0.5, 2, 10, 6]} />
-              <meshBasicMaterial color={COLORS.cyan} wireframe />
-            </mesh>
+            <NeuralGrid />
+            
+            <BurjKhalifa onSelect={setSelectedTarget} />
+            <BurjAlArab onSelect={setSelectedTarget} />
+            <AinDubai onSelect={setSelectedTarget} />
+            <PalmJumeirah />
+            <TrafficTrails />
+            
+            {Array.from({ length: 40 }).map((_, i) => (
+              <LidarAgent 
+                key={i} 
+                id={1000 + i} 
+                position={[(Math.random() - 0.5) * 600, 0, (Math.random() - 0.5) * 600]} 
+                onSelect={setSelectedTarget} 
+              />
+            ))}
           </group>
         )}
 
         <EffectComposer enableNormalPass={false}>
-          <Bloom luminanceThreshold={0.1} intensity={1.5} mipmapBlur radius={0.5} />
-          <Scanline opacity={0.1} />
-          <Noise opacity={0.05} />
-          <Vignette darkness={1.2} />
+          <Bloom luminanceThreshold={0.2} intensity={2.0} mipmapBlur radius={0.4} />
+          <Scanline opacity={0.15} />
+          <Noise opacity={0.08} />
+          <Vignette darkness={1.1} />
         </EffectComposer>
       </Canvas>
 
