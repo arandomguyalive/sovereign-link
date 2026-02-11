@@ -97,23 +97,54 @@ const OrbitalSatellite = ({ id, label, orbitRadius, speed, offset, onHack }: any
   );
 };
 
+// --- CIA-LEVEL DATA GENERATORS ---
+const generateAgentData = (id: number) => ({
+  id: `ENTITY_${id}`,
+  name: ['John Doe', 'Sarah Connor', 'Arthur Dent', 'Molly Millions', 'Hiro Protagonist'][id % 5],
+  risk: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'][Math.floor(Math.random() * 4)],
+  biometrics: {
+    heartRate: `${70 + Math.floor(Math.random() * 20)} BPM`,
+    temp: '36.5°C',
+    gait: '98% Match'
+  },
+  devices: [
+    { model: 'iPhone 15 Pro', imei: `3567${id}0098`, os: 'iOS 17.4', ip: `10.0.4.${id % 255}` },
+    { model: 'Apple Watch S9', imei: `8642${id}1122`, os: 'watchOS 10.2', ip: `10.0.4.${(id + 1) % 255}` }
+  ],
+  intercepts: [
+    'Interpreting packet flow...',
+    'Location ping: Marina Sector',
+    'Encrypted signal detected: Signal App'
+  ]
+});
+
+const generateVehicleData = (id: number) => ({
+  id: `VEHICLE_${id}`,
+  type: ['Tesla Model S', 'Range Rover', 'Mercedes S-Class', 'Autonomous Shuttle'][id % 4],
+  plate: `DXB ${1000 + id}`,
+  speed: `${60 + Math.floor(Math.random() * 40)} KM/H`,
+  owner: 'PRIVATE_CORP_04'
+});
+
 // --- MOBILE FRIENDLY DOSSIER ---
 const IntelligenceSidebar = ({ target, isBreached, onClose }: any) => {
   if (!target) return null;
-  const devices = useMemo(() => Array.from({ length: 10 }).map((_, i) => ({
-    model: ['iPhone 15', 'Samsung S24', 'MacBook Air', 'Tesla Model S'][Math.floor(Math.random() * 4)],
-    signal: `-${Math.floor(Math.random() * 40 + 50)}dBm`
-  })), [target.id]);
+  
+  const data = useMemo(() => {
+    if (target.type === 'CIVILIAN_AGENT') return generateAgentData(target.id);
+    if (target.type === 'VEHICLE') return generateVehicleData(target.id.replace('VEHICLE_', ''));
+    return null;
+  }, [target.id, target.type]);
 
   return (
     <motion.div 
       initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} 
-      className="fixed inset-y-0 right-0 w-full sm:w-[400px] bg-black/95 border-l-2 sm:border-l-4 border-neon-cyan p-4 sm:p-8 font-mono z-[3000] shadow-2xl overflow-y-auto"
+      className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-black/95 border-l-2 sm:border-l-4 border-neon-cyan p-4 sm:p-8 font-mono z-[3000] shadow-2xl overflow-y-auto backdrop-blur-xl"
     >
       <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
         <div className="flex items-center gap-3">
           {isBreached ? <Unlock className="text-emerald-400" size={20} /> : <Lock className="text-red-500" size={20} />}
-          <div className="text-sm sm:text-xl text-neon-cyan font-black tracking-widest uppercase italic truncate max-w-[200px]">{target.id}</div>
+          <div className="text-sm sm:text-xl text-neon-cyan font-black tracking-widest uppercase italic truncate max-w-[250px]">{target.id}</div>
         </div>
         <button onClick={onClose} className="text-white hover:text-red-500 p-2 bg-white/5 rounded-full"><X size={24} /></button>
       </div>
@@ -121,26 +152,62 @@ const IntelligenceSidebar = ({ target, isBreached, onClose }: any) => {
       {!isBreached ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <ShieldAlert size={64} className="text-red-500 mb-4 animate-pulse" />
-          <div className="text-red-500 font-black text-lg mb-2 uppercase">Access Denied</div>
-          <div className="text-white/40 text-[10px] uppercase">Encryption Layer Locked. Use terminal to breach.</div>
+          <div className="text-red-500 font-black text-lg mb-2 uppercase tracking-tighter">Encryption Layer: RSA-4096</div>
+          <div className="text-white/40 text-[10px] uppercase">Access Denied. Run `breach {target.id}` in terminal.</div>
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-emerald-500/10 border-l-2 border-emerald-500 p-4">
-            <div className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Uplink: Stable</div>
-            <div className="text-sm text-white font-black mt-1 uppercase">Breach Success // Data Flowing</div>
-          </div>
-          <div className="space-y-2">
-            {devices.map((d, i) => (
-              <div key={i} className="bg-zinc-900/80 p-3 border border-white/5 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <Smartphone size={16} className="text-emerald-400" />
-                  <span className="text-[10px] text-white font-bold">{d.model}</span>
+          {target.type === 'CIVILIAN_AGENT' && data && (
+            <>
+              <div className="bg-emerald-500/10 border-l-2 border-emerald-500 p-4">
+                <div className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Biometric Uplink</div>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div className="text-[9px] text-white/60">HEART: <span className="text-white font-bold">{data.biometrics.heartRate}</span></div>
+                  <div className="text-[9px] text-white/60">GAIT: <span className="text-white font-bold">{data.biometrics.gait}</span></div>
+                  <div className="text-[9px] text-white/60">TEMP: <span className="text-white font-bold">{data.biometrics.temp}</span></div>
                 </div>
-                <span className="text-[9px] text-emerald-400/60 font-mono">{d.signal}</span>
               </div>
-            ))}
-          </div>
+
+              <div className="space-y-4">
+                <div className="text-[10px] text-neon-cyan font-black uppercase tracking-[0.3em] border-b border-neon-cyan/20 pb-1">Associated Devices</div>
+                {data.devices.map((d: any, i: number) => (
+                  <div key={i} className="bg-zinc-900/80 p-3 border border-white/5 space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] text-white font-black">{d.model}</span>
+                      <span className="text-[9px] text-emerald-400/60 font-mono">{d.os}</span>
+                    </div>
+                    <div className="text-[8px] text-white/40 font-mono">IMEI: {d.imei} | IP: {d.ip}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-[10px] text-neon-cyan font-black uppercase tracking-[0.3em] border-b border-neon-cyan/20 pb-1">Signal Intercepts</div>
+                <div className="bg-black border border-emerald-500/30 p-3 font-mono text-[9px] text-emerald-500/80 space-y-1">
+                  {data.intercepts.map((log: string, i: number) => (
+                    <div key={i} className="flex gap-2">
+                      <span className="opacity-40">[{new Date().toLocaleTimeString()}]</span>
+                      <span>{log}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {target.type === 'VEHICLE' && data && (
+            <div className="space-y-4">
+              <div className="bg-neon-cyan/10 border-l-2 border-neon-cyan p-4">
+                <div className="text-[10px] text-neon-cyan font-black uppercase">Telematics Stream</div>
+                <div className="text-2xl text-white font-black mt-2">{data.speed}</div>
+                <div className="text-[10px] text-white/40 uppercase mt-1">{data.type} // {data.plate}</div>
+              </div>
+              <div className="bg-zinc-900/80 p-4 border border-white/5 space-y-2">
+                <div className="text-[10px] text-white/60 uppercase">Registered Owner</div>
+                <div className="text-sm text-white font-bold">{data.owner}</div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </motion.div>
@@ -250,32 +317,32 @@ const AinDubai = ({ onSelect }: any) => (
   </group>
 );
 
-const TrafficTrails = () => {
+const TrafficTrails = ({ onSelect }: any) => {
   const points = useMemo(() => {
-    return Array.from({ length: 12 }).map(() => {
+    return Array.from({ length: 12 }).map((_, i) => {
       const curve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(-800, 0.5, (Math.random() - 0.5) * 800),
         new THREE.Vector3(0, 0.5, (Math.random() - 0.5) * 200),
         new THREE.Vector3(800, 0.5, (Math.random() - 0.5) * 800),
       ]);
-      return curve;
+      return { curve, id: 5000 + i };
     });
   }, []);
 
   return (
     <group>
-      {points.map((curve, i) => (
-        <TrafficTrail key={i} curve={curve} color={i % 3 === 0 ? COLORS.cyan : i % 3 === 1 ? COLORS.gold : COLORS.purple} />
+      {points.map((p, i) => (
+        <TrafficTrail key={i} curve={p.curve} id={p.id} color={i % 3 === 0 ? COLORS.cyan : i % 3 === 1 ? COLORS.gold : COLORS.purple} onSelect={onSelect} />
       ))}
     </group>
   );
 };
 
-const TrafficTrail = ({ curve, color }: any) => {
+const TrafficTrail = ({ curve, id, color, onSelect }: any) => {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     if (ref.current) {
-      const t = (clock.getElapsedTime() * 0.05 + Math.random() * 0.1) % 1;
+      const t = (clock.getElapsedTime() * 0.05 + id * 0.1) % 1;
       const pos = curve.getPointAt(t);
       ref.current.position.copy(pos);
     }
@@ -287,10 +354,15 @@ const TrafficTrail = ({ curve, color }: any) => {
         <tubeGeometry args={[curve, 200, 0.2, 8, false]} />
         <meshBasicMaterial color={color} transparent opacity={0.05} />
       </mesh>
-      <mesh ref={ref}>
-        <sphereGeometry args={[1, 8, 8]} />
+      <mesh ref={ref} onClick={(e) => { e.stopPropagation(); onSelect({ id: `VEHICLE_${id}`, type: 'VEHICLE' }); }}>
+        <sphereGeometry args={[1.5, 8, 8]} />
         <meshBasicMaterial color={color} />
         <pointLight intensity={3} distance={20} color={color} />
+        <Html distanceFactor={40} position={[0, 4, 0]} center>
+          <div className="text-[5px] text-white font-bold bg-black/60 px-1 border border-white/20 whitespace-nowrap uppercase">
+            V_{id}
+          </div>
+        </Html>
       </mesh>
     </>
   );
@@ -391,6 +463,12 @@ export const DubaiTacticalMap = () => {
   const [breachedTargets, setBreachedTargets] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
 
+  // Live Entity Data
+  const entities = useMemo(() => Array.from({ length: 40 }).map((_, i) => ({
+    id: 2000 + i,
+    pos: [(Math.random() - 0.5) * 1200, 0, (Math.random() - 0.5) * 1200]
+  })), []);
+
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
@@ -439,17 +517,17 @@ export const DubaiTacticalMap = () => {
               <BurjAlArab onSelect={setSelectedTarget} />
               <AinDubai onSelect={setSelectedTarget} />
               <PalmJumeirah onSelect={setSelectedTarget} />
-              <TrafficTrails />
+              <TrafficTrails onSelect={setSelectedTarget} />
               
               <ZoneMarker position={[100, 0, 100]} label="DOWNTOWN_SECTOR" />
               <ZoneMarker position={[-200, 0, -50]} label="MARINA_DISTRICT" />
               <ZoneMarker position={[50, 0, -200]} label="DEIRA_CORE" />
               
-              {Array.from({ length: 50 }).map((_, i) => (
+              {entities.map((e) => (
                 <LidarAgent 
-                  key={i} 
-                  id={2000 + i} 
-                  position={[(Math.random() - 0.5) * 1200, 0, (Math.random() - 0.5) * 1200]} 
+                  key={e.id} 
+                  id={e.id} 
+                  position={e.pos} 
                   onSelect={setSelectedTarget} 
                 />
               ))}
@@ -461,6 +539,34 @@ export const DubaiTacticalMap = () => {
               </mesh>
             </group>
           )}
+
+          <EffectComposer enableNormalPass={false}>
+            <Bloom luminanceThreshold={0.15} intensity={2.5} mipmapBlur radius={0.6} />
+            <Scanline opacity={0.2} />
+            <Noise opacity={0.1} />
+            <Vignette darkness={1.3} />
+            <Glitch 
+              delay={new THREE.Vector2(2, 4)} 
+              duration={new THREE.Vector2(0.1, 0.3)} 
+              strength={new THREE.Vector2(0.1, 0.2)} 
+              mode={THREE.NormalBlending} 
+            />
+          </EffectComposer>
+        </Suspense>
+      </Canvas>
+
+      {/* TACTICAL ENTITY FEED */}
+      <div className="absolute top-24 left-4 w-48 bottom-24 hidden lg:flex flex-col gap-2 pointer-events-none overflow-hidden">
+        <div className="text-[10px] text-neon-cyan font-black uppercase tracking-widest border-b border-neon-cyan/20 pb-1">Live Intercepts</div>
+        <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar">
+          {entities.slice(0, 15).map((e, i) => (
+            <div key={i} className="bg-black/40 backdrop-blur-md border-l border-white/10 p-2 animate-in slide-in-from-left duration-500" style={{ animationDelay: `${i * 100}ms` }}>
+              <div className="text-[8px] text-white/60 font-bold uppercase italic">ID: {e.id}</div>
+              <div className="text-[7px] text-neon-cyan/80 font-mono mt-0.5">SIG: -{Math.floor(Math.random() * 40 + 40)}dBm</div>
+            </div>
+          ))}
+        </div>
+      </div>
 
           <EffectComposer enableNormalPass={false}>
             <Bloom luminanceThreshold={0.15} intensity={2.5} mipmapBlur radius={0.6} />
