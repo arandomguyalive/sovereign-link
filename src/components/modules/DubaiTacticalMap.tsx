@@ -217,7 +217,7 @@ export const DubaiTacticalMap = () => {
           </group>
         )}
 
-        <EffectComposer disableNormalPass={false}>
+        <EffectComposer enableNormalPass={false}>
           <Bloom luminanceThreshold={0.1} intensity={1.5} mipmapBlur radius={0.4} />
           <Noise opacity={0.05} />
           <Vignette darkness={1.2} />
