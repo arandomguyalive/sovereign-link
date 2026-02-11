@@ -2,326 +2,227 @@
 
 import React, { useRef, useState, useMemo, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { MapControls, Text, Float, Stars, PerspectiveCamera, Html, Trail, Line } from '@react-three/drei';
+import { MapControls, Text, Float, Stars, PerspectiveCamera, Html, Trail, ContactShadows, PresentationControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useWindowManager } from '@/store/useWindowManager';
 import { useTerminal } from '@/store/useTerminal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, Satellite, Wifi, Smartphone, ShieldAlert, Cpu, Crosshair } from 'lucide-react';
+import { Satellite, ShieldAlert, Cpu, Crosshair, Zap, Activity } from 'lucide-react';
 
 const COLORS = {
-  cyan: '#00F0FF', // Cyber Cyan
+  cyan: '#00F0FF',
   blue: '#0066FF',
   pink: '#FF0055',
-  purple: '#6B0098',
   gold: '#FFD700',
   danger: '#FF3333',
   grid: '#0a1a2a',
-  traffic_white: '#ffffff',
-  traffic_red: '#ff0000'
+  satellite: '#e0e0e0'
 };
 
-// --- GOD EYE VISUALS: Traffic & Particles ---
-const TrafficStream = ({ path, color, count = 30, speed = 0.5, width = 0.2 }: any) => {
-  const [offsets] = useState(() => Array.from({ length: count }, () => Math.random()));
-  return (
-    <group>
-      {offsets.map((offset, i) => (
-        <TrafficPacket key={i} path={path} color={color} offset={offset} speed={speed} width={width} />
-      ))}
-    </group>
-  );
-};
-
-const TrafficPacket = ({ path, color, offset, speed, width }: any) => {
-  const mesh = useRef<THREE.Mesh>(null);
+// --- ORBITAL COMPONENT: Rotating Tactical Satellite ---
+const TacticalSatellite = ({ onHack }: any) => {
+  const satRef = useRef<THREE.Group>(null);
+  
   useFrame((state) => {
-    if (!mesh.current) return;
-    const t = (state.clock.getElapsedTime() * speed * 0.1 + offset) % 1;
-    const pos = path.getPointAt(t);
-    const tangent = path.getTangentAt(t).normalize();
-    mesh.current.position.set(pos.x, pos.y, pos.z);
-    mesh.current.lookAt(pos.clone().add(tangent));
+    if (!satRef.current) return;
+    satRef.current.rotation.y += 0.005;
+    satRef.current.position.y = Math.sin(state.clock.getElapsedTime()) * 0.5;
   });
-  return (
-    <mesh ref={mesh}>
-      <boxGeometry args={[width, 0.1, width * 3]} />
-      <meshBasicMaterial color={color} />
-      {/* Light Trail */}
-      <Trail width={width} length={8} color={new THREE.Color(color)} attenuation={(t) => t * t}>
-        <mesh />
-      </Trail>
-    </mesh>
-  );
-};
 
-// --- GEOMETRY: Burj Khalifa (Wireframe Titan) ---
-const BurjKhalifa = ({ onHack }: any) => {
   return (
-    <group position={[20, 0, -20]} onClick={(e) => { e.stopPropagation(); onHack("BURJ_CORE", "BUILDING"); }}>
-      {/* Base Tiers */}
-      {[0, 120, 240].map((rot, i) => (
-        <group key={i} rotation={[0, rot * (Math.PI/180), 0]}>
-           {[...Array(5)].map((_, j) => (
-             <mesh key={j} position={[0, j * 3, 0]}>
-               <cylinderGeometry args={[1.5 - j*0.2, 2 - j*0.2, 6, 3]} />
-               <meshBasicMaterial color={COLORS.cyan} wireframe transparent opacity={0.3} />
-             </mesh>
-           ))}
-        </group>
-      ))}
-      
-      {/* Main Spire */}
-      <mesh position={[0, 25, 0]}>
-        <cylinderGeometry args={[0.1, 1.8, 50, 6]} />
-        <meshBasicMaterial color="#001133" transparent opacity={0.8} />
+    <group ref={satRef} onClick={onHack} cursor="pointer">
+      {/* Main Body */}
+      <mesh>
+        <boxGeometry args={[1, 1, 2]} />
+        <meshStandardMaterial color={COLORS.satellite} metalness={1} roughness={0.2} />
       </mesh>
-      <lineSegments position={[0, 25, 0]}>
-        <edgesGeometry args={[new THREE.CylinderGeometry(0.1, 1.8, 50, 6)]} />
-        <lineBasicMaterial color={COLORS.cyan} opacity={0.8} transparent />
-      </lineSegments>
-
-      {/* FLOOR 154 - High Value Target */}
-      <group position={[0, 35, 0]} onClick={(e) => { e.stopPropagation(); onHack("FLOOR_154_SERVER", "RESTRICTED"); }}>
-        <mesh>
-          <torusGeometry args={[2, 0.1, 16, 100]} />
-          <meshBasicMaterial color={COLORS.danger} />
+      {/* Solar Panels */}
+      <group position={[0, 0, 0]}>
+        <mesh position={[2, 0, 0]}>
+          <boxGeometry args={[3, 0.05, 1.2]} />
+          <meshStandardMaterial color={COLORS.blue} emissive={COLORS.blue} emissiveIntensity={0.5} wireframe />
         </mesh>
-        <Html distanceFactor={60}>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-red-600 rounded-full animate-ping" />
-            <div className="bg-red-950/90 border border-red-500 text-[10px] text-red-500 px-2 py-1 font-mono font-bold tracking-widest whitespace-nowrap">
-              ⚠ FLOOR 154 // RESTRICTED
-            </div>
-          </div>
-        </Html>
+        <mesh position={[-2, 0, 0]}>
+          <boxGeometry args={[3, 0.05, 1.2]} />
+          <meshStandardMaterial color={COLORS.blue} emissive={COLORS.blue} emissiveIntensity={0.5} wireframe />
+        </mesh>
       </group>
-
-      {/* Floating Label */}
-      <Html position={[8, 40, 0]} distanceFactor={80}>
-        <div className="text-right">
-          <div className="text-[12px] text-neon-cyan font-black tracking-widest">BURJ_KHALIFA</div>
-          <div className="text-[8px] text-white/50">HGT: 828m // SECTOR: DOWNTOWN</div>
+      {/* Sensor Dish */}
+      <mesh position={[0, -0.6, 0.8]} rotation={[Math.PI / 4, 0, 0]}>
+        <cylinderGeometry args={[0.4, 0.1, 0.5, 16]} />
+        <meshStandardMaterial color={COLORS.gold} metalness={1} />
+      </mesh>
+      {/* Glowing Lens */}
+      <mesh position={[0, -0.8, 1]} rotation={[Math.PI / 4, 0, 0]}>
+        <circleGeometry args={[0.2, 32]} />
+        <meshBasicMaterial color={COLORS.cyan} />
+        <pointLight color={COLORS.cyan} intensity={2} distance={5} />
+      </mesh>
+      
+      <Html distanceFactor={15} position={[0, 2, 0]}>
+        <div className="bg-black/90 border border-neon-cyan p-2 font-mono text-[10px] whitespace-nowrap animate-pulse">
+          <div className="text-neon-cyan font-black tracking-widest">KH-11 // AEGIS_SATELLITE</div>
+          <div className="text-white/40 text-[8px]">ENCRYPTION: AES-4096 [LOCKED]</div>
+          <div className="mt-2 text-emerald-400 text-[7px] font-black underline">CLICK_TO_ESTABLISH_DOWNLINK</div>
         </div>
-        <div className="w-16 h-px bg-neon-cyan/50 mt-1" />
-        <div className="w-px h-16 bg-neon-cyan/50 absolute top-0 right-0" />
       </Html>
     </group>
   );
 };
 
-// --- GEOMETRY: Palm Jumeirah (Digital Blueprint) ---
-const PalmJumeirah = ({ onHack }: any) => {
-  const palmShape = useMemo(() => {
-    const shape = new THREE.Shape();
-    // Simplified procedural palm for stability
-    shape.absarc(0, 0, 2, 0, Math.PI * 2, false);
-    return shape;
+// --- CITY COMPONENTS: High-Fidelity Wireframes ---
+const BurjKhalifa = ({ onHack }: any) => (
+  <group position={[30, 0, -20]} onClick={() => onHack("BURJ_CORE_154")}>
+    <mesh position={[0, 20, 0]}>
+      <cylinderGeometry args={[0.1, 3, 40, 6]} />
+      <meshBasicMaterial color={COLORS.cyan} wireframe transparent opacity={0.4} />
+    </mesh>
+    <mesh position={[0, 35, 0]}>
+      <torusGeometry args={[2.5, 0.1, 16, 100]} />
+      <meshBasicMaterial color={COLORS.danger} />
+    </mesh>
+    <Html position={[0, 42, 0]} distanceFactor={60}>
+      <div className="text-[10px] text-neon-cyan border border-neon-cyan px-2 bg-black font-black">BURJ_KHALIFA_MAIN_FRAME</div>
+    </Html>
+  </group>
+);
+
+const PalmJumeirah = () => (
+  <group position={[-40, 0.1, 20]} rotation={[-Math.PI/2, 0, -0.5]}>
+    <mesh><ringGeometry args={[2, 12, 32]} /><meshBasicMaterial color={COLORS.purple} wireframe opacity={0.3} /></mesh>
+    {[...Array(16)].map((_, i) => (
+      <group key={i} rotation={[0, 0, (i/16) * Math.PI * 2]}>
+        <mesh position={[0, 6, 0]}><planeGeometry args={[0.5, 8]} /><meshBasicMaterial color={COLORS.purple} wireframe opacity={0.2} /></mesh>
+      </group>
+    ))}
+  </group>
+);
+
+// --- TRAFFIC & HUMAN LOGS ---
+const SigintStream = () => {
+  const [items, setItems] = useState<string[]>([]);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const log = `INTERCEPTED: ${['IPHONE_15', 'SAMSUNG_S24', 'BMW_X7', 'TESLA_CYBER'][Math.floor(Math.random()*4)]} // ${Math.random().toString(16).slice(2,10).toUpperCase()} // RSSI: -${Math.floor(Math.random()*40+50)}dBm`;
+      setItems(prev => [log, ...prev].slice(0, 10));
+    }, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <group position={[-40, 0.2, 20]} onClick={(e) => { e.stopPropagation(); onHack("PALM_GRID_MASTER", "WIFI"); }}>
-      {/* Trunk (Road) */}
-      <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, 0, 4]}>
-        <planeGeometry args={[1.5, 12]} />
-        <meshBasicMaterial color={COLORS.purple} wireframe transparent opacity={0.5} />
-      </mesh>
-      
-      {/* Fronds (Holo-Fins) */}
-      {[...Array(16)].map((_, i) => (
-        <group key={i} rotation={[0, (i/16)*Math.PI + Math.PI, 0]}>
-           <mesh position={[0, 0, 4]} rotation={[Math.PI/2, 0, 0]}>
-             <planeGeometry args={[0.5, 6]} />
-             <meshBasicMaterial color={COLORS.purple} wireframe transparent opacity={0.3} />
-           </mesh>
-        </group>
-      ))}
-
-      {/* Crescent (Shield) */}
-      <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, 0, 9]}>
-        <ringGeometry args={[8, 9, 32, 1, Math.PI, Math.PI]} />
-        <meshBasicMaterial color={COLORS.cyan} wireframe />
-      </mesh>
-
-      <Html position={[0, 5, 0]} distanceFactor={60}>
-        <div className="text-center">
-          <div className="text-[10px] text-purple-400 font-bold border border-purple-500 px-2 bg-black/80">PALM_JUMEIRAH</div>
-          <div className="text-[8px] text-white/40">RESIDENTIAL_GRID</div>
-        </div>
-      </Html>
-    </group>
+    <div className="absolute bottom-20 right-4 w-72 bg-black/80 border-l-2 border-neon-cyan p-2 font-mono text-[8px] text-white/60 select-none">
+      <div className="text-neon-cyan font-black mb-2 flex items-center gap-2">
+        <Activity size={10} className="animate-pulse" /> LIVE_SIGINT_CAPTURE
+      </div>
+      {items.map((it, i) => <div key={i} className="mb-1 truncate">{it}</div>)}
+    </div>
   );
 };
 
-// --- GEOMETRY: Burj Al Arab (The Sail) ---
-const BurjAlArab = ({ onHack }: any) => (
-  <group position={[-10, 0, 5]} rotation={[0, Math.PI/4, 0]} onClick={(e) => { e.stopPropagation(); onHack("ROYAL_SUITE_WIFI", "WIFI"); }}>
-    <mesh position={[0, 5, 0]}>
-      <cylinderGeometry args={[0, 3, 12, 3]} />
-      <meshBasicMaterial color="white" transparent opacity={0.1} />
-      <lineSegments><edgesGeometry args={[new THREE.CylinderGeometry(0, 3, 12, 3)]} /><lineBasicMaterial color={COLORS.cyan} /></lineSegments>
-    </mesh>
-    <mesh position={[0, 8, 1.5]} rotation={[Math.PI/2, 0, 0]}>
-      <cylinderGeometry args={[1, 1, 0.2, 16]} />
-      <meshBasicMaterial color={COLORS.gold} wireframe />
-    </mesh>
-    <Html position={[0, 12, 0]} distanceFactor={50}>
-      <div className="text-[8px] text-white border border-white/30 px-1 bg-black/80">BURJ_AL_ARAB</div>
-    </Html>
-  </group>
-);
-
-// --- GEOMETRY: Bank of Emirates (Financial Fortress) ---
-const BankNBD = ({ onHack }: any) => (
-  <group position={[25, 0, -10]} onClick={(e) => { e.stopPropagation(); onHack("NBD_VAULT_CORE", "BANK"); }}>
-    <mesh position={[0, 4, 0]}>
-      <boxGeometry args={[6, 8, 4]} />
-      <meshBasicMaterial color={COLORS.gold} wireframe transparent opacity={0.2} />
-      <lineSegments><edgesGeometry args={[new THREE.BoxGeometry(6, 8, 4)]} /><lineBasicMaterial color={COLORS.gold} /></lineSegments>
-    </mesh>
-    <Html position={[0, 9, 0]} distanceFactor={40}>
-      <div className="text-[8px] text-yellow-500 border border-yellow-500 px-1 bg-black/80 font-black">$ NBD_HQ</div>
-    </Html>
-  </group>
-);
-
-// --- ENVIRONMENT: Parabolic Mesh & Ocean ---
-const Environment = () => (
-  <group>
-    {/* Ocean Grid */}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.2, 0]}>
-      <planeGeometry args={[500, 500, 100, 100]} />
-      <meshBasicMaterial color={COLORS.grid} wireframe transparent opacity={0.3} />
-    </mesh>
-    {/* Water Surface */}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.3, 0]}>
-      <planeGeometry args={[500, 500]} />
-      <meshBasicMaterial color="#000810" />
-    </mesh>
-  </group>
-);
-
-// --- AGENTS: Lidar Humanoids (God Eye Dots) ---
-const GodEyeTarget = ({ position, type, onInspect }: any) => {
-  const ref = useRef<THREE.Group>(null);
-  const [speed] = useState(0.05 + Math.random() * 0.05);
-  
-  useFrame((state) => {
-    if (!ref.current) return;
-    const t = state.clock.getElapsedTime();
-    ref.current.position.x += Math.sin(t * speed + position[0]) * 0.02;
-    ref.current.position.z += Math.cos(t * speed + position[2]) * 0.02;
-  });
-
-  return (
-    <group ref={ref} position={position} onClick={(e) => { e.stopPropagation(); onInspect(type); }}>
-      <mesh position={[0, 0.5, 0]}>
-        <capsuleGeometry args={[0.15, 0.5, 4, 8]} />
-        <meshBasicMaterial color={type === 'VIP' ? COLORS.gold : COLORS.cyan} />
-      </mesh>
-      {/* Selection Ring */}
-      <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, 0.1, 0]}>
-        <ringGeometry args={[0.3, 0.35, 16]} />
-        <meshBasicMaterial color={type === 'VIP' ? COLORS.gold : COLORS.cyan} transparent opacity={0.5} />
-      </mesh>
-    </group>
-  );
-};
-
-// --- MAIN COMPONENT ---
 export const DubaiTacticalMap = () => {
   const { openWindow, updateWindow } = useWindowManager();
   const { addLog } = useTerminal();
+  const [view, setView] = useState<'ORBIT' | 'CITY'>('ORBIT');
   const [mounted, setMounted] = useState(false);
-  const [targetLock, setTargetLock] = useState<string | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
-  const handleHack = (target: string, type: string) => {
-    if (type === 'RESTRICTED') {
-      addLog(`[ALERT] RESTRICTED ZONE ACCESSED: ${target}`, 'error');
-      addLog(`[SYSTEM] ENCRYPTION LEVEL 5 DETECTED`, 'warning');
-    }
-    updateWindow('terminal', { isOpen: true, title: `TERMINAL // TARGET: ${target}` });
+  const initiateHack = () => {
+    updateWindow('terminal', { isOpen: true, title: 'UPLINK // AEGIS_SATELLITE_BREACH' });
     openWindow('terminal');
-    setTargetLock(target);
+    addLog('[!] SATELLITE SIGNAL DETECTED. INITIATING BRUTE FORCE...', 'warning');
+    setTimeout(() => {
+      addLog('[SUCCESS] DOWNLINK ESTABLISHED. DESCENDING TO TARGET...', 'success');
+      setView('CITY');
+    }, 2000);
   };
 
-  const handleInspect = (type: string) => {
-    updateWindow('terminal', { isOpen: true });
-    openWindow('terminal');
-    addLog(`[SCAN] BIOMETRIC MATCH FOUND: ${type}`, 'success');
-    addLog(`[DATA] DOWNLOADING DEVICE LOGS...`, 'info');
-  };
-
-  // Traffic Path (Highway)
-  const highwayPath = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-60, 0.2, 30),
-    new THREE.Vector3(-20, 0.2, 10),
-    new THREE.Vector3(20, 0.2, -20),
-    new THREE.Vector3(60, 0.2, -40),
-  ]), []);
-
-  if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono">GOD_EYE_INIT...</div>;
+  if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono">AEGIS_OS_BOOT...</div>;
 
   return (
-    <div className="w-full h-full bg-[#020202] relative cursor-crosshair overflow-hidden pointer-events-auto">
-      <Canvas shadows dpr={[1, 2]}>
-        <PerspectiveCamera makeDefault position={[0, 60, 60]} fov={40} />
+    <div className="w-full h-full bg-[#010101] relative cursor-crosshair overflow-hidden pointer-events-auto">
+      <Canvas shadows>
+        <PerspectiveCamera makeDefault position={view === 'ORBIT' ? [0, 5, 10] : [0, 80, 80]} fov={40} />
         <MapControls 
           enableDamping 
           dampingFactor={0.05} 
-          minDistance={10} 
-          maxDistance={200}
-          maxPolarAngle={Math.PI / 2.1} 
+          minDistance={view === 'ORBIT' ? 5 : 10} 
+          maxDistance={250} 
         />
         <Stars radius={200} count={10000} factor={4} fade />
-        <ambientLight intensity={0.5} />
+        <ambientLight intensity={0.4} />
         <pointLight position={[10, 50, 10]} intensity={2} color={COLORS.cyan} />
 
-        {/* Environment */}
-        <Environment />
-        
-        {/* Traffic Arteries */}
-        <TrafficStream path={highwayPath} color={COLORS.traffic_white} count={40} speed={0.05} width={0.3} />
-        <TrafficStream path={highwayPath} color={COLORS.traffic_red} count={40} speed={0.04} width={0.3} />
-
-        {/* Major Landmarks */}
-        <BurjKhalifa onHack={handleHack} />
-        <PalmJumeirah onHack={handleHack} />
-        <BurjAlArab onHack={handleHack} />
-        <BankNBD onHack={handleHack} />
-
-        {/* Lidar Crowds */}
-        <group>
-          {[...Array(30)].map((_, i) => (
-            <GodEyeTarget key={i} position={[(Math.random()-0.5)*40, 0, (Math.random()-0.5)*40]} type="CIVILIAN" onInspect={handleInspect} />
-          ))}
-          <GodEyeTarget position={[22, 0, -22]} type="VIP" onInspect={handleInspect} /> {/* VIP near Burj */}
-        </group>
-
+        {view === 'ORBIT' ? (
+          <PresentationControls global config={{ mass: 2, tension: 500 }} snap={{ mass: 4, tension: 1500 }}>
+            <TacticalSatellite onHack={initiateHack} />
+          </PresentationControls>
+        ) : (
+          <group>
+            {/* Parabolic Terrain Grid */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
+              <planeGeometry args={[500, 500, 100, 100]} />
+              <meshBasicMaterial color={COLORS.grid} wireframe opacity={0.2} transparent />
+            </mesh>
+            
+            <DubaiMap onHack={(id: string) => {
+               updateWindow('terminal', { isOpen: true, title: `BREACHING // ${id}` });
+               openWindow('terminal');
+               addLog(`[ALERT] ATTEMPTING ACCESS TO ${id}...`, 'warning');
+            }} />
+            
+            <BurjKhalifa onHack={(id: string) => {
+               updateWindow('terminal', { isOpen: true, title: `CRITICAL // ${id}` });
+               openWindow('terminal');
+               addLog(`[CRITICAL] HIGH-SECURITY ZONE BREACH: ${id}`, 'error');
+            }} />
+            
+            <PalmJumeirah />
+          </group>
+        )}
       </Canvas>
 
-      {/* GOD EYE HUD */}
-      <div className="absolute top-4 left-4 pointer-events-none font-mono">
-        <div className="flex items-center gap-2 mb-1">
-          <Globe size={16} className="text-neon-cyan animate-spin-slow" />
-          <div className="text-xs text-neon-cyan font-black tracking-[0.4em]">GOD_EYE_V14</div>
+      {/* GOD EYE UI OVERLAY */}
+      <div className="absolute top-4 left-4 font-mono pointer-events-none select-none">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-3 h-3 bg-neon-cyan animate-ping rounded-full" />
+          <div className="text-xl text-neon-cyan font-black tracking-[0.5em]">GHOST_EYE_V15</div>
         </div>
-        <div className="text-[9px] text-white/60">LAT: 25.2048 // LONG: 55.2708</div>
-        <div className="text-[9px] text-white/60">TARGETS_ACTIVE: 184</div>
-        {targetLock && (
-          <div className="mt-4 border-l-2 border-red-500 pl-2">
-            <div className="text-[10px] text-red-500 font-bold animate-pulse">LOCKED: {targetLock}</div>
-            <div className="text-[8px] text-white/40">INITIATE HACK SEQUENCE</div>
+        <div className="text-[10px] text-white/40 mb-4">STATUS: {view === 'ORBIT' ? 'ORBITAL_PATROL' : 'DOWNLINK_ACTIVE'}</div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white/5 border-l-2 border-neon-cyan p-2">
+            <div className="text-[8px] text-white/40">LATITUDE</div>
+            <div className="text-[10px] text-white font-black tracking-widest">25.2048° N</div>
           </div>
-        )}
+          <div className="bg-white/5 border-l-2 border-neon-cyan p-2">
+            <div className="text-[8px] text-white/40">LONGITUDE</div>
+            <div className="text-[10px] text-white font-black tracking-widest">55.2708° E</div>
+          </div>
+        </div>
       </div>
 
-      {/* Targeting Reticle */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-20">
-        <Crosshair size={48} className="text-neon-cyan" />
+      {view === 'CITY' && <SigintStream />}
+
+      {/* Target Crosshair */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+        <Crosshair size={60} className="text-neon-cyan opacity-20" />
+      </div>
+
+      <div className="absolute bottom-4 left-4 font-mono text-[8px] text-white/20 uppercase tracking-[0.5em]">
+        Department of Defense // Advanced Tactical Operations // GHOST_SIGINT
       </div>
     </div>
   );
 };
+
+const DubaiMap = ({ onHack }: any) => (
+  <group>
+    {/* Generic Skyline Wireframes */}
+    {[...Array(100)].map((_, i) => (
+      <mesh key={i} position={[(Math.random()-0.5)*150, Math.random()*5, (Math.random()-0.5)*150]} onClick={() => onHack(`NODE_${i}`)}>
+        <boxGeometry args={[2, Math.random()*10+5, 2]} />
+        <meshBasicMaterial color={COLORS.cyan} wireframe transparent opacity={0.1} />
+      </mesh>
+    ))}
+  </group>
+);
