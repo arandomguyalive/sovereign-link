@@ -38,7 +38,6 @@ const DenseCity = ({ count = 1500 }) => {
     for (let i = 0; i < count; i++) {
       const x = (Math.random() - 0.5) * range;
       const z = (Math.random() - 0.5) * range;
-      // Clear path for landmarks
       if (Math.abs(x) < 10 && Math.abs(z) < 10) continue; 
       
       const h = Math.random() * 12 + 2;
@@ -61,7 +60,6 @@ const DenseCity = ({ count = 1500 }) => {
           <Instance key={i} {...props} />
         ))}
       </Instances>
-      {/* Wireframe Overlay for Buildings */}
       <Instances>
         <boxGeometry args={[1, 1, 1]} />
         <meshBasicMaterial color={COLORS.cyan} wireframe transparent opacity={0.1} />
@@ -73,24 +71,20 @@ const DenseCity = ({ count = 1500 }) => {
   );
 };
 
-// --- CORE: High-Fidelity Landmarks ---
 const BurjKhalifa = ({ onHack }: any) => {
   const ref = useRef<THREE.Group>(null);
   return (
     <group ref={ref} position={[0, 0, 0]} onClick={(e) => { e.stopPropagation(); onHack("BURJ_KHALIFA_SYSTEMS"); }}>
-      {/* Structural Segments */}
       {[...Array(40)].map((_, i) => (
         <mesh key={i} position={[0, i * 1.2, 0]}>
           <cylinderGeometry args={[2 - i * 0.04, 2.2 - i * 0.04, 0.1, 6]} />
           <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.4} />
         </mesh>
       ))}
-      {/* Inner Core */}
       <mesh position={[0, 24, 0]}>
         <cylinderGeometry args={[0.1, 2.5, 48, 6]} />
         <meshBasicMaterial color={COLORS.blue} wireframe transparent opacity={0.2} />
       </mesh>
-      {/* RESTRICTED ZONE */}
       <group position={[0, 38, 0]} onClick={(e) => { e.stopPropagation(); onHack("FLOOR_154_VAULT"); }}>
         <mesh><torusGeometry args={[3, 0.05, 16, 100]} /><meshBasicMaterial color={COLORS.danger} /></mesh>
         <Html distanceFactor={40}>
@@ -119,7 +113,6 @@ const BurjAlArab = () => (
   </group>
 );
 
-// --- CORE: Traffic Artery System ---
 const TrafficArtery = ({ path, color, count = 100, speed = 1 }: any) => {
   const [offsets] = useState(() => Array.from({ length: count }, () => Math.random()));
   return (
@@ -148,7 +141,6 @@ const Vehicle = ({ path, color, offset, speed }: any) => {
   );
 };
 
-// --- CORE: LIDAR Human Agents ---
 const LidarAgent = ({ position, onInspect }: any) => {
   const group = useRef<THREE.Group>(null);
   const [speed] = useState(0.02 + Math.random() * 0.04);
@@ -175,7 +167,6 @@ const LidarAgent = ({ position, onInspect }: any) => {
   );
 };
 
-// --- MAIN ENGINE: GOD-EYE OMNISCIENT ---
 export const DubaiTacticalMap = () => {
   const { openWindow, updateWindow } = useWindowManager();
   const { addLog } = useTerminal();
@@ -239,7 +230,6 @@ export const DubaiTacticalMap = () => {
             <BurjKhalifa onHack={(id: string) => handleInspect({ id, type: 'CORE' })} />
             <BurjAlArab />
             
-            {/* Traffic Streams */}
             <TrafficArtery path={highwayPath} color={COLORS.traffic_white} speed={2} count={50} />
             <TrafficArtery path={highwayPath} color={COLORS.traffic_red} speed={1.5} count={50} />
 
@@ -249,7 +239,7 @@ export const DubaiTacticalMap = () => {
           </group>
         )}
 
-        <EffectComposer disableNormalPass={false}>
+        <EffectComposer enableNormalPass={false}>
           <Bloom luminanceThreshold={0.1} intensity={2} mipmapBlur radius={0.5} />
           <Scanline opacity={0.1} />
           <Noise opacity={0.05} />
@@ -258,7 +248,6 @@ export const DubaiTacticalMap = () => {
         </EffectComposer>
       </Canvas>
 
-      {/* GOD EYE INTERFACE HUD */}
       <div className="absolute top-4 left-4 font-mono pointer-events-none select-none">
         <div className="flex items-center gap-3 mb-2">
           <Globe size={32} className="text-neon-cyan animate-spin-slow" />
