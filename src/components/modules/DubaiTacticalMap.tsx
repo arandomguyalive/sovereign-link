@@ -2,227 +2,251 @@
 
 import React, { useRef, useState, useMemo, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { MapControls, Text, Float, Stars, PerspectiveCamera, Html, Trail, ContactShadows, PresentationControls } from '@react-three/drei';
+import { MapControls, Text, Float, Stars, PerspectiveCamera, Html, Points, PointMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import { useWindowManager } from '@/store/useWindowManager';
 import { useTerminal } from '@/store/useTerminal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Satellite, ShieldAlert, Cpu, Crosshair, Zap, Activity } from 'lucide-react';
+import { Satellite as SatIcon, Crosshair, Activity, Zap, ShieldAlert, Globe } from 'lucide-react';
 
 const COLORS = {
   cyan: '#00F0FF',
   blue: '#0066FF',
   pink: '#FF0055',
+  purple: '#6B0098',
   gold: '#FFD700',
   danger: '#FF3333',
-  grid: '#0a1a2a',
-  satellite: '#e0e0e0'
+  grid: '#050505',
 };
 
-// --- ORBITAL COMPONENT: Rotating Tactical Satellite ---
-const TacticalSatellite = ({ onHack }: any) => {
-  const satRef = useRef<THREE.Group>(null);
-  
+// --- ORBITAL SATELLITE (High-End Model) ---
+const SatelliteNode = ({ position, id, label, onHack, isCracked }: any) => {
+  const ref = useRef<THREE.Group>(null);
+  const [hovered, setHovered] = useState(false);
+
   useFrame((state) => {
-    if (!satRef.current) return;
-    satRef.current.rotation.y += 0.005;
-    satRef.current.position.y = Math.sin(state.clock.getElapsedTime()) * 0.5;
+    if (!ref.current) return;
+    ref.current.rotation.y += 0.01;
+    ref.current.position.y += Math.sin(state.clock.getElapsedTime() + position[0]) * 0.005;
   });
 
   return (
-    <group ref={satRef} onClick={onHack} cursor="pointer">
-      {/* Main Body */}
-      <mesh>
-        <boxGeometry args={[1, 1, 2]} />
-        <meshStandardMaterial color={COLORS.satellite} metalness={1} roughness={0.2} />
+    <group position={position} ref={ref} onClick={() => onHack(id)}>
+      <mesh onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)}>
+        <boxGeometry args={[0.8, 0.4, 0.6]} />
+        <meshStandardMaterial color={isCracked ? '#00ff00' : (hovered ? COLORS.gold : '#fff')} metalness={1} />
       </mesh>
-      {/* Solar Panels */}
-      <group position={[0, 0, 0]}>
-        <mesh position={[2, 0, 0]}>
-          <boxGeometry args={[3, 0.05, 1.2]} />
-          <meshStandardMaterial color={COLORS.blue} emissive={COLORS.blue} emissiveIntensity={0.5} wireframe />
-        </mesh>
-        <mesh position={[-2, 0, 0]}>
-          <boxGeometry args={[3, 0.05, 1.2]} />
-          <meshStandardMaterial color={COLORS.blue} emissive={COLORS.blue} emissiveIntensity={0.5} wireframe />
-        </mesh>
-      </group>
-      {/* Sensor Dish */}
-      <mesh position={[0, -0.6, 0.8]} rotation={[Math.PI / 4, 0, 0]}>
-        <cylinderGeometry args={[0.4, 0.1, 0.5, 16]} />
-        <meshStandardMaterial color={COLORS.gold} metalness={1} />
+      {/* Solar Wings */}
+      <mesh position={[1.2, 0, 0]}>
+        <boxGeometry args={[1.5, 0.02, 0.8]} />
+        <meshBasicMaterial color={COLORS.blue} wireframe />
       </mesh>
-      {/* Glowing Lens */}
-      <mesh position={[0, -0.8, 1]} rotation={[Math.PI / 4, 0, 0]}>
-        <circleGeometry args={[0.2, 32]} />
-        <meshBasicMaterial color={COLORS.cyan} />
-        <pointLight color={COLORS.cyan} intensity={2} distance={5} />
+      <mesh position={[-1.2, 0, 0]}>
+        <boxGeometry args={[1.5, 0.02, 0.8]} />
+        <meshBasicMaterial color={COLORS.blue} wireframe />
       </mesh>
       
-      <Html distanceFactor={15} position={[0, 2, 0]}>
-        <div className="bg-black/90 border border-neon-cyan p-2 font-mono text-[10px] whitespace-nowrap animate-pulse">
-          <div className="text-neon-cyan font-black tracking-widest">KH-11 // AEGIS_SATELLITE</div>
-          <div className="text-white/40 text-[8px]">ENCRYPTION: AES-4096 [LOCKED]</div>
-          <div className="mt-2 text-emerald-400 text-[7px] font-black underline">CLICK_TO_ESTABLISH_DOWNLINK</div>
+      <Html distanceFactor={20} position={[0, 1.5, 0]}>
+        <div className={`p-2 border font-mono text-[9px] whitespace-nowrap transition-all ${
+          isCracked ? 'bg-emerald-950/90 border-emerald-500 text-emerald-400' : 'bg-black/90 border-white/20 text-white'
+        }`}>
+          <div className="flex items-center gap-2">
+            <SatIcon size={12} />
+            <span className="font-black tracking-widest">{label}</span>
+          </div>
+          {hovered && !isCracked && <div className="mt-1 text-neon-cyan animate-pulse">INITIATE_SIGNAL_HANDSHAKE</div>}
         </div>
       </Html>
     </group>
   );
 };
 
-// --- CITY COMPONENTS: High-Fidelity Wireframes ---
-const BurjKhalifa = ({ onHack }: any) => (
-  <group position={[30, 0, -20]} onClick={() => onHack("BURJ_CORE_154")}>
-    <mesh position={[0, 20, 0]}>
-      <cylinderGeometry args={[0.1, 3, 40, 6]} />
-      <meshBasicMaterial color={COLORS.cyan} wireframe transparent opacity={0.4} />
-    </mesh>
-    <mesh position={[0, 35, 0]}>
-      <torusGeometry args={[2.5, 0.1, 16, 100]} />
-      <meshBasicMaterial color={COLORS.danger} />
-    </mesh>
-    <Html position={[0, 42, 0]} distanceFactor={60}>
-      <div className="text-[10px] text-neon-cyan border border-neon-cyan px-2 bg-black font-black">BURJ_KHALIFA_MAIN_FRAME</div>
-    </Html>
-  </group>
-);
-
-const PalmJumeirah = () => (
-  <group position={[-40, 0.1, 20]} rotation={[-Math.PI/2, 0, -0.5]}>
-    <mesh><ringGeometry args={[2, 12, 32]} /><meshBasicMaterial color={COLORS.purple} wireframe opacity={0.3} /></mesh>
-    {[...Array(16)].map((_, i) => (
-      <group key={i} rotation={[0, 0, (i/16) * Math.PI * 2]}>
-        <mesh position={[0, 6, 0]}><planeGeometry args={[0.5, 8]} /><meshBasicMaterial color={COLORS.purple} wireframe opacity={0.2} /></mesh>
-      </group>
-    ))}
-  </group>
-);
-
-// --- TRAFFIC & HUMAN LOGS ---
-const SigintStream = () => {
-  const [items, setItems] = useState<string[]>([]);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const log = `INTERCEPTED: ${['IPHONE_15', 'SAMSUNG_S24', 'BMW_X7', 'TESLA_CYBER'][Math.floor(Math.random()*4)]} // ${Math.random().toString(16).slice(2,10).toUpperCase()} // RSSI: -${Math.floor(Math.random()*40+50)}dBm`;
-      setItems(prev => [log, ...prev].slice(0, 10));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+// --- LIDAR CITY (Point Cloud Rendering for Realism) ---
+const LidarStructure = ({ position, type, name, onInspect }: any) => {
+  const points = useMemo(() => {
+    const temp = [];
+    const count = type === 'BURJ' ? 2000 : 500;
+    for (let i = 0; i < count; i++) {
+      if (type === 'BURJ') {
+        const h = Math.random() * 30;
+        const r = (1 - h / 30) * 2;
+        const a = Math.random() * Math.PI * 2;
+        temp.push(Math.cos(a) * r, h, Math.sin(a) * r);
+      } else if (type === 'PALM') {
+        const r = Math.random() * 15;
+        const a = Math.random() * Math.PI * 2;
+        temp.push(Math.cos(a) * r, 0, Math.sin(a) * r);
+      } else {
+        temp.push((Math.random() - 0.5) * 5, Math.random() * 8, (Math.random() - 0.5) * 5);
+      }
+    }
+    return new Float32Array(temp);
+  }, [type]);
 
   return (
-    <div className="absolute bottom-20 right-4 w-72 bg-black/80 border-l-2 border-neon-cyan p-2 font-mono text-[8px] text-white/60 select-none">
-      <div className="text-neon-cyan font-black mb-2 flex items-center gap-2">
-        <Activity size={10} className="animate-pulse" /> LIVE_SIGINT_CAPTURE
-      </div>
-      {items.map((it, i) => <div key={i} className="mb-1 truncate">{it}</div>)}
-    </div>
+    <group position={position} onClick={() => onInspect({ id: name, type })}>
+      <Points positions={points}>
+        <PointMaterial transparent color={type === 'BANK' ? COLORS.gold : COLORS.cyan} size={0.08} sizeAttenuation={true} depthWrite={false} />
+      </Points>
+      {type === 'BURJ' && (
+        <mesh position={[0, 25, 0]} onClick={(e) => { e.stopPropagation(); onInspect({ id: 'FLOOR_154', type: 'RESTRICTED' }); }}>
+          <torusGeometry args={[2.5, 0.05, 16, 100]} />
+          <meshBasicMaterial color={COLORS.danger} />
+          <Html distanceFactor={40}><div className="bg-red-600 text-white text-[8px] px-1 font-black animate-pulse">RESTRICTED_ZONE</div></Html>
+        </mesh>
+      )}
+      <Html position={[0, type === 'BURJ' ? 32 : 10, 0]} distanceFactor={50}>
+        <div className="text-[10px] text-white font-black bg-black/60 px-2 border border-white/20 uppercase tracking-widest">{name}</div>
+      </Html>
+    </group>
   );
 };
 
+// --- LIDAR AGENTS ---
+const LidarAgent = ({ position, onInspect }: any) => {
+  const ref = useRef<THREE.Group>(null);
+  const [speed] = useState(0.05 + Math.random() * 0.05);
+  
+  useFrame((state) => {
+    if (!ref.current) return;
+    const t = state.clock.getElapsedTime();
+    ref.current.position.x += Math.sin(t * speed + position[0]) * 0.02;
+    ref.current.position.z += Math.cos(t * speed + position[2]) * 0.02;
+  });
+
+  return (
+    <group ref={ref} position={position} onClick={(e) => { e.stopPropagation(); onInspect(); }}>
+      <mesh>
+        <sphereGeometry args={[0.15, 8, 8]} />
+        <meshBasicMaterial color="#fff" />
+      </mesh>
+      <mesh position={[0, -0.2, 0]}>
+        <ringGeometry args={[0.3, 0.35, 16]} />
+        <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.5} />
+      </mesh>
+    </group>
+  );
+};
+
+// --- MAIN ENGINE ---
 export const DubaiTacticalMap = () => {
   const { openWindow, updateWindow } = useWindowManager();
   const { addLog } = useTerminal();
   const [view, setView] = useState<'ORBIT' | 'CITY'>('ORBIT');
+  const [crackedSats, setCrackedSats] = useState<string[]>([]);
+  const [selectedTarget, setSelectedTarget] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
-  const initiateHack = () => {
-    updateWindow('terminal', { isOpen: true, title: 'UPLINK // AEGIS_SATELLITE_BREACH' });
+  const handleSatHack = (id: string) => {
+    if (crackedSats.includes(id)) {
+      setView('CITY');
+      return;
+    }
+    updateWindow('terminal', { isOpen: true, title: `SIGNAL_BREACH // ${id}` });
     openWindow('terminal');
-    addLog('[!] SATELLITE SIGNAL DETECTED. INITIATING BRUTE FORCE...', 'warning');
+    addLog(`[!] DETECTING HANDSHAKE FROM ${id}...`, 'warning');
     setTimeout(() => {
-      addLog('[SUCCESS] DOWNLINK ESTABLISHED. DESCENDING TO TARGET...', 'success');
+      setCrackedSats(prev => [...prev, id]);
+      addLog(`[SUCCESS] DOWNLINK ESTABLISHED. DESCENDING...`, 'success');
       setView('CITY');
     }, 2000);
   };
 
-  if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono">AEGIS_OS_BOOT...</div>;
+  const handleInspect = (target: any) => {
+    setSelectedTarget(target);
+    updateWindow('terminal', { isOpen: true });
+    openWindow('terminal');
+    addLog(`[SCAN] TARGET ACQUIRED: ${target.id}`, 'info');
+    if (target.type === 'RESTRICTED') addLog(`[WARNING] ACCESSING HIGH-SECURITY SECTOR`, 'error');
+  };
+
+  if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono">GOD_EYE_BOOT...</div>;
 
   return (
     <div className="w-full h-full bg-[#010101] relative cursor-crosshair overflow-hidden pointer-events-auto">
       <Canvas shadows>
-        <PerspectiveCamera makeDefault position={view === 'ORBIT' ? [0, 5, 10] : [0, 80, 80]} fov={40} />
-        <MapControls 
-          enableDamping 
-          dampingFactor={0.05} 
-          minDistance={view === 'ORBIT' ? 5 : 10} 
-          maxDistance={250} 
-        />
+        <PerspectiveCamera makeDefault position={view === 'ORBIT' ? [0, 15, 25] : [0, 60, 60]} fov={40} />
+        <MapControls enableDamping dampingFactor={0.05} minDistance={5} maxDistance={200} maxPolarAngle={Math.PI / 2.1} />
         <Stars radius={200} count={10000} factor={4} fade />
-        <ambientLight intensity={0.4} />
+        <ambientLight intensity={0.5} />
         <pointLight position={[10, 50, 10]} intensity={2} color={COLORS.cyan} />
 
         {view === 'ORBIT' ? (
-          <PresentationControls global config={{ mass: 2, tension: 500 }} snap={{ mass: 4, tension: 1500 }}>
-            <TacticalSatellite onHack={initiateHack} />
-          </PresentationControls>
+          <group rotation={[0, 0, 0.4]}>
+            <mesh><sphereGeometry args={[10, 64, 64]} /><meshStandardMaterial color="#051030" metalness={0.9} roughness={0.1} /></mesh>
+            <SatelliteNode position={[14, 2, 8]} label="KH-11 [DUBAI]" id="KH-11" isCracked={crackedSats.includes('KH-11')} onHack={handleSatHack} />
+            <SatelliteNode position={[-12, 6, 10]} label="SENTINEL-6 [NYC]" id="SENTINEL-6" isCracked={crackedSats.includes('SENTINEL-6')} onHack={handleSatHack} />
+            <SatelliteNode position={[5, 14, -6]} label="EYE-1 [LONDON]" id="EYE-1" isCracked={crackedSats.includes('EYE-1')} onHack={handleSatHack} />
+          </group>
         ) : (
           <group>
-            {/* Parabolic Terrain Grid */}
+            {/* Lidar Ground Grid */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
               <planeGeometry args={[500, 500, 100, 100]} />
-              <meshBasicMaterial color={COLORS.grid} wireframe opacity={0.2} transparent />
+              <meshBasicMaterial color={COLORS.blue} wireframe opacity={0.1} transparent />
             </mesh>
             
-            <DubaiMap onHack={(id: string) => {
-               updateWindow('terminal', { isOpen: true, title: `BREACHING // ${id}` });
-               openWindow('terminal');
-               addLog(`[ALERT] ATTEMPTING ACCESS TO ${id}...`, 'warning');
-            }} />
-            
-            <BurjKhalifa onHack={(id: string) => {
-               updateWindow('terminal', { isOpen: true, title: `CRITICAL // ${id}` });
-               openWindow('terminal');
-               addLog(`[CRITICAL] HIGH-SECURITY ZONE BREACH: ${id}`, 'error');
-            }} />
-            
-            <PalmJumeirah />
+            <LidarStructure position={[30, 0, -20]} type="BURJ" name="BURJ_KHALIFA" onInspect={handleInspect} />
+            <LidarStructure position={[-40, 0, 20]} type="PALM" name="PALM_JUMEIRAH" onInspect={handleInspect} />
+            <LidarStructure position={[40, 0, -10]} type="BANK" name="BANK_OF_EMIRATES" onInspect={handleInspect} />
+
+            {[...Array(40)].map((_, i) => (
+              <LidarAgent key={i} position={[(Math.random()-0.5)*100, 0, (Math.random()-0.5)*100]} onInspect={() => handleInspect({ id: `HUMAN_${9000+i}`, type: 'BIOMETRIC' })} />
+            ))}
           </group>
         )}
       </Canvas>
 
-      {/* GOD EYE UI OVERLAY */}
+      {/* GOD EYE INTERFACE */}
       <div className="absolute top-4 left-4 font-mono pointer-events-none select-none">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-3 h-3 bg-neon-cyan animate-ping rounded-full" />
-          <div className="text-xl text-neon-cyan font-black tracking-[0.5em]">GHOST_EYE_V15</div>
+          <Globe size={20} className="text-neon-cyan animate-spin-slow" />
+          <div className="text-xl text-neon-cyan font-black tracking-[0.5em]">GOD_EYE_APEX</div>
         </div>
-        <div className="text-[10px] text-white/40 mb-4">STATUS: {view === 'ORBIT' ? 'ORBITAL_PATROL' : 'DOWNLINK_ACTIVE'}</div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white/5 border-l-2 border-neon-cyan p-2">
-            <div className="text-[8px] text-white/40">LATITUDE</div>
-            <div className="text-[10px] text-white font-black tracking-widest">25.2048° N</div>
-          </div>
-          <div className="bg-white/5 border-l-2 border-neon-cyan p-2">
-            <div className="text-[8px] text-white/40">LONGITUDE</div>
-            <div className="text-[10px] text-white font-black tracking-widest">55.2708° E</div>
-          </div>
-        </div>
+        <div className="text-[10px] text-white/40 mb-4 uppercase">Downlink: {view} // Locked: {crackedSats.length}</div>
+        
+        {view !== 'ORBIT' && (
+          <button 
+            onClick={() => setView('ORBIT')} 
+            className="mt-4 px-4 py-2 border border-red-500 text-red-500 text-[10px] font-black uppercase pointer-events-auto hover:bg-red-500/20 transition-all shadow-[0_0_15px_rgba(255,0,0,0.2)]"
+          >
+            TERMINATE_UPLINK
+          </button>
+        )}
       </div>
 
-      {view === 'CITY' && <SigintStream />}
+      {/* Target Dossier */}
+      <AnimatePresence>
+        {selectedTarget && (
+          <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} className="absolute top-20 right-4 w-80 bg-black/95 border-l-4 border-neon-cyan p-4 font-mono z-[2000] shadow-2xl pointer-events-auto">
+            <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+              <div className="text-xs text-neon-cyan font-black tracking-widest">TARGET_DOSSIER // {selectedTarget.id}</div>
+              <button onClick={() => setSelectedTarget(null)} className="text-white/40 hover:text-white transition-colors">X</button>
+            </div>
+            <div className="text-[9px] text-white/60 space-y-2">
+              <div className="flex justify-between"><span>DEVICE_TYPE:</span> <span className="text-white">IPHONE_15_PRO</span></div>
+              <div className="flex justify-between"><span>STATUS:</span> <span className="text-emerald-400">ACTIVE_SIGNAL</span></div>
+              <div className="flex justify-between"><span>ENCRYPTION:</span> <span className="text-yellow-400">WPA3_ENTERPRISE</span></div>
+              <div className="flex justify-between"><span>OS_VER:</span> <span className="text-white">iOS_18.1.2</span></div>
+            </div>
+            <div className="mt-6">
+               <div className="text-[8px] text-neon-cyan mb-1 font-black uppercase">Intercepting_Data_Waterfall...</div>
+               <div className="h-24 overflow-hidden bg-white/5 p-2 rounded text-[7px] text-white/30 truncate">
+                  {Array.from({length: 10}).map((_, i) => <div key={i}>{Math.random().toString(16).repeat(5)}</div>)}
+               </div>
+            </div>
+            <button className="w-full mt-4 py-2 bg-emerald-500/10 border border-emerald-500 text-emerald-500 text-[9px] font-black hover:bg-emerald-500/20">
+              CLONE_DEVICE_IDENTITY
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Target Crosshair */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
         <Crosshair size={60} className="text-neon-cyan opacity-20" />
-      </div>
-
-      <div className="absolute bottom-4 left-4 font-mono text-[8px] text-white/20 uppercase tracking-[0.5em]">
-        Department of Defense // Advanced Tactical Operations // GHOST_SIGINT
       </div>
     </div>
   );
 };
-
-const DubaiMap = ({ onHack }: any) => (
-  <group>
-    {/* Generic Skyline Wireframes */}
-    {[...Array(100)].map((_, i) => (
-      <mesh key={i} position={[(Math.random()-0.5)*150, Math.random()*5, (Math.random()-0.5)*150]} onClick={() => onHack(`NODE_${i}`)}>
-        <boxGeometry args={[2, Math.random()*10+5, 2]} />
-        <meshBasicMaterial color={COLORS.cyan} wireframe transparent opacity={0.1} />
-      </mesh>
-    ))}
-  </group>
-);
