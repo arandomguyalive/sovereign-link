@@ -276,7 +276,8 @@ const LidarAgent = ({ id, position, onSelect }: any) => {
     }
     if (scannerRef.current) {
       scannerRef.current.scale.setScalar(1 + Math.sin(clock.getElapsedTime() * 4) * 0.2);
-      scannerRef.current.material.opacity = 0.5 - Math.sin(clock.getElapsedTime() * 4) * 0.3;
+      const material = scannerRef.current.material as THREE.MeshBasicMaterial;
+      material.opacity = 0.5 - Math.sin(clock.getElapsedTime() * 4) * 0.3;
     }
   });
 
@@ -307,16 +308,28 @@ const LidarAgent = ({ id, position, onSelect }: any) => {
   );
 };
 
-const NeuralGrid = () => (
-  <group>
-    <gridHelper args={[4000, 100, COLORS.cyan, '#050505']} position={[0, -0.4, 0]} />
-    <gridHelper args={[4000, 20, COLORS.blue, '#020202']} position={[0, -0.45, 0]} opacity={0.2} transparent />
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
-      <planeGeometry args={[4000, 4000]} />
-      <meshBasicMaterial color="#000" />
-    </mesh>
-  </group>
-);
+const NeuralGrid = () => {
+  const gridRef = useRef<THREE.GridHelper>(null);
+
+  useEffect(() => {
+    if (gridRef.current) {
+      const material = gridRef.current.material as THREE.LineBasicMaterial;
+      material.transparent = true;
+      material.opacity = 0.2;
+    }
+  }, []);
+
+  return (
+    <group>
+      <gridHelper args={[4000, 100, COLORS.cyan, '#050505']} position={[0, -0.4, 0]} />
+      <gridHelper ref={gridRef} args={[4000, 20, COLORS.blue, '#020202']} position={[0, -0.45, 0]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
+        <planeGeometry args={[4000, 4000]} />
+        <meshBasicMaterial color="#000" />
+      </mesh>
+    </group>
+  );
+};
 
 // --- RECON ENGINE ---
 export const DubaiTacticalMap = () => {
@@ -399,7 +412,12 @@ export const DubaiTacticalMap = () => {
             <Scanline opacity={0.2} />
             <Noise opacity={0.1} />
             <Vignette darkness={1.3} />
-            <Glitch delay={[2, 4]} duration={[0.1, 0.3]} strength={[0.1, 0.2]} mode={THREE.NormalBlending} />
+            <Glitch 
+              delay={new THREE.Vector2(2, 4)} 
+              duration={new THREE.Vector2(0.1, 0.3)} 
+              strength={new THREE.Vector2(0.1, 0.2)} 
+              mode={THREE.NormalBlending} 
+            />
           </EffectComposer>
         </Suspense>
       </Canvas>
