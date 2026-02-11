@@ -21,6 +21,7 @@ import { Globe, Satellite, Smartphone, ShieldAlert, Cpu, Crosshair, Activity, Ma
 const COLORS = {
   cyan: '#00F0FF',
   blue: '#0066FF',
+  purple: '#6B0098',
   gold: '#FFD700',
   danger: '#FF3333',
   space: '#000000',
