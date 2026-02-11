@@ -233,7 +233,7 @@ export const DubaiTacticalMap = () => {
           )}
         </Suspense>
 
-        <EffectComposer disableNormalPass>
+        <EffectComposer enableNormalPass={false}>
           <Bloom luminanceThreshold={0.2} mipmapBlur intensity={1.5} radius={0.4} />
           <Noise opacity={0.05} />
           <Vignette eskil={false} offset={0.1} darkness={1.1} />
