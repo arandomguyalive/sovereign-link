@@ -45,7 +45,7 @@ const DenseCity = ({ count = 1500 }) => {
       temp.push({
         position: [x, h / 2, z] as [number, number, number],
         scale: [w, h, w] as [number, number, number],
-        id: `BLDG-${i}`
+        id: i
       });
     }
     return temp;
