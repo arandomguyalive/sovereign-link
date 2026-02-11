@@ -8,14 +8,13 @@ import {
   PerspectiveCamera, 
   Html, 
   useTexture, 
-  Float,
 } from '@react-three/drei';
 import { EffectComposer, Bloom, Noise, Vignette, Glitch, Scanline } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { useWindowManager } from '@/store/useWindowManager';
 import { useTerminal } from '@/store/useTerminal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, Smartphone, ShieldAlert, Cpu, Crosshair, X, Unlock, Lock, Activity, Zap, Radio } from 'lucide-react';
+import { Smartphone, ShieldAlert, X, Unlock, Lock, Radio, Crosshair } from 'lucide-react';
 
 const COLORS = {
   cyan: '#00F0FF',
@@ -27,8 +26,27 @@ const COLORS = {
   atmosphere: '#00aaff'
 };
 
+// --- DATA STRUCTURES ---
+interface AgentData {
+  id: string;
+  name: string;
+  risk: string;
+  biometrics: { heartRate: string; temp: string; gait: string };
+  devices: { model: string; imei: string; os: string; ip: string }[];
+  intercepts: string[];
+}
+
+interface VehicleData {
+  id: string;
+  type: string;
+  plate: string;
+  speed: string;
+  owner: string;
+  destination: string;
+}
+
 // --- DATA GENERATORS ---
-const generateAgentData = (id: any) => ({
+const generateAgentData = (id: any): AgentData => ({
   id: `ENTITY_${id}`,
   name: ['Marcus Vane', 'Elena Rossi', 'Kaelen Thorne', 'Sia Tanaka', 'Viktor Volkov'][id % 5],
   risk: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'][id % 4],
@@ -49,7 +67,7 @@ const generateAgentData = (id: any) => ({
   ]
 });
 
-const generateVehicleData = (id: any) => ({
+const generateVehicleData = (id: any): VehicleData => ({
   id: `VEHICLE_${id}`,
   type: ['Tesla Model S Plaid', 'Land Rover Defender', 'Mercedes-Maybach', 'Audi e-tron'][id % 4],
   plate: `DXB ${id}`,
@@ -81,8 +99,8 @@ const EarthSystem = ({ onSelectSat }: any) => {
         <sphereGeometry args={[10, 64, 64]} />
         <meshStandardMaterial map={cloudsMap} transparent opacity={0.4} blending={THREE.AdditiveBlending} />
       </mesh>
-      <OrbitalSatellite id="KH-11" label="KH-11 [DUBAI]" orbitRadius={14} speed={0.2} offset={0} onHack={() => onSelectSat('DUBAI')} />
-      <OrbitalSatellite id="SENTINEL" label="SENTINEL [NYC]" orbitRadius={16} speed={0.15} offset={2} onHack={() => onSelectSat('NYC')} />
+      <OrbitalSatellite label="KH-11 [DUBAI]" orbitRadius={14} speed={0.2} offset={0} onHack={() => onSelectSat('DUBAI')} />
+      <OrbitalSatellite label="SENTINEL [NYC]" orbitRadius={16} speed={0.15} offset={2} onHack={() => onSelectSat('NYC')} />
     </group>
   );
 };
@@ -121,6 +139,9 @@ const IntelligenceSidebar = ({ target, isBreached, onClose }: any) => {
     return null;
   }, [target.id, target.type]);
 
+  const agentData = target.type === 'CIVILIAN_AGENT' ? (data as AgentData) : null;
+  const vehicleData = target.type === 'VEHICLE' ? (data as VehicleData) : null;
+
   return (
     <motion.div 
       initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} 
@@ -142,19 +163,19 @@ const IntelligenceSidebar = ({ target, isBreached, onClose }: any) => {
         </div>
       ) : (
         <div className="space-y-6">
-          {target.type === 'CIVILIAN_AGENT' && data && (
+          {agentData && (
             <>
               <div className="bg-emerald-500/10 border-l-2 border-emerald-500 p-4">
                 <div className="text-[10px] text-emerald-400 font-black uppercase">Biometric Stream</div>
                 <div className="grid grid-cols-3 gap-2 mt-2">
-                  <div className="text-[9px] text-white/60">HEART: <span className="text-white">{data.biometrics.heartRate}</span></div>
-                  <div className="text-[9px] text-white/60">GAIT: <span className="text-white">{data.biometrics.gait}</span></div>
-                  <div className="text-[9px] text-white/60">TEMP: <span className="text-white">{data.biometrics.temp}</span></div>
+                  <div className="text-[9px] text-white/60">HEART: <span className="text-white">{agentData.biometrics.heartRate}</span></div>
+                  <div className="text-[9px] text-white/60">GAIT: <span className="text-white">{agentData.biometrics.gait}</span></div>
+                  <div className="text-[9px] text-white/60">TEMP: <span className="text-white">{agentData.biometrics.temp}</span></div>
                 </div>
               </div>
               <div className="space-y-4">
                 <div className="text-[10px] text-neon-cyan font-black uppercase tracking-widest border-b border-white/10 pb-1">Identified Devices</div>
-                {data.devices.map((d: any, i: number) => (
+                {agentData.devices.map((d: any, i: number) => (
                   <div key={i} className="bg-zinc-900/80 p-3 border border-white/5">
                     <div className="flex justify-between text-[11px] font-black"><span>{d.model}</span><span className="text-emerald-400">{d.os}</span></div>
                     <div className="text-[8px] text-white/40 mt-1">IMEI: {d.imei} | IP: {d.ip}</div>
@@ -163,20 +184,20 @@ const IntelligenceSidebar = ({ target, isBreached, onClose }: any) => {
               </div>
               <div className="bg-black border border-emerald-500/30 p-3 text-[9px] text-emerald-500/80 space-y-1">
                 <div className="text-white/40 mb-2 uppercase">[Live Intercepts]</div>
-                {data.intercepts.map((log: string, i: number) => <div key={i} className="flex gap-2"><span>&gt;</span><span>{log}</span></div>)}
+                {agentData.intercepts.map((log: string, i: number) => <div key={i} className="flex gap-2"><span>&gt;</span><span>{log}</span></div>)}
               </div>
             </>
           )}
-          {target.type === 'VEHICLE' && data && (
+          {vehicleData && (
             <div className="space-y-4">
               <div className="bg-neon-cyan/10 border-l-2 border-neon-cyan p-4">
                 <div className="text-[10px] text-neon-cyan font-black uppercase">Telematics</div>
-                <div className="text-2xl text-white font-black mt-2">{data.speed}</div>
-                <div className="text-[10px] text-white/40 uppercase">{data.type} // {data.plate}</div>
+                <div className="text-2xl text-white font-black mt-2">{vehicleData.speed}</div>
+                <div className="text-[10px] text-white/40 uppercase">{vehicleData.type} // {vehicleData.plate}</div>
               </div>
               <div className="bg-zinc-900/80 p-4 border border-white/5">
                 <div className="text-[10px] text-white/60 uppercase">Owner</div>
-                <div className="text-sm text-white font-bold">{data.owner}</div>
+                <div className="text-sm text-white font-bold">{vehicleData.owner}</div>
               </div>
             </div>
           )}
@@ -261,7 +282,7 @@ export const DubaiTacticalMap = () => {
   const [breachedTargets, setBreachedTargets] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
 
-  const entities = useMemo(() => Array.from({ length: 40 }).map((_, i) => ({ id: 2000 + i, pos: [(Math.random() - 0.5) * 1200, 0, (Math.random() - 0.5) * 1200] })), []);
+  const entities = useMemo(() => Array.from({ length: 40 }).map((_, i) => ({ id: 2000 + i, pos: [(Math.random() - 0.5) * 1200, 0, (Math.random() - 0.5) * 1200] as [number, number, number] })), []);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -277,7 +298,7 @@ export const DubaiTacticalMap = () => {
         }, 1500);
       }
     }
-  }, [history, selectedTarget]);
+  }, [history, selectedTarget, addLog]);
 
   if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono tracking-[0.5em] animate-pulse">UPLINK_WAIT</div>;
 
