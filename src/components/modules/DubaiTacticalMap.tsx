@@ -137,7 +137,7 @@ const Vehicle = ({ path, color, offset, speed }: any) => {
       <sphereGeometry args={[0.15, 8, 8]} />
       <meshBasicMaterial color={color} />
       <pointLight color={color} intensity={1} distance={2} />
-    </group>
+    </mesh>
   );
 };
 
