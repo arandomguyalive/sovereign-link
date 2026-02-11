@@ -214,12 +214,22 @@ const IntelligenceSidebar = ({ target, onClose }: any) => {
 // --- ENTITY NODES ---
 const EntityNode = ({ data, onSelect }: { data: EntityData, onSelect: any }) => {
   const ref = useRef<THREE.Group>(null);
+  const initialPos = useMemo(() => data.pos, [data.pos]);
   
   useFrame(({ clock }) => {
     if (ref.current && (data.type === 'AGENT' || data.type === 'VEHICLE')) {
-      const speed = data.type === 'VEHICLE' ? 0.3 : 0.08;
-      ref.current.position.x += Math.sin(clock.getElapsedTime() * speed + parseInt(data.id.split('_')[1])) * 0.15;
-      ref.current.position.z += Math.cos(clock.getElapsedTime() * speed + parseInt(data.id.split('_')[1])) * 0.15;
+      const t = clock.getElapsedTime();
+      const idNum = parseInt(data.id.split('_')[1]) || 0;
+      const speed = data.type === 'VEHICLE' ? 0.5 : 0.2;
+      const range = data.type === 'VEHICLE' ? 100 : 30;
+      
+      ref.current.position.x = initialPos[0] + Math.sin(t * speed + idNum) * range;
+      ref.current.position.z = initialPos[2] + Math.cos(t * speed + idNum) * range;
+      
+      // Look at direction of travel
+      const nextX = initialPos[0] + Math.sin((t + 0.1) * speed + idNum) * range;
+      const nextZ = initialPos[2] + Math.cos((t + 0.1) * speed + idNum) * range;
+      ref.current.lookAt(nextX, initialPos[1], nextZ);
     }
   });
 
@@ -282,17 +292,31 @@ const BurjKhalifa = ({ onSelect }: any) => (
     {/* 154th Floor - Abhed Zone */}
     <group position={[0, 110, 0]} onClick={(e) => { e.stopPropagation(); onSelect({ id: 'ABHED_ZONE_154', type: 'VIP_TARGET', pos: [0, 110, 0], details: { lat: '25.1972', lng: '55.2744' } }); }}>
       <mesh><cylinderGeometry args={[3, 3, 2, 16]} /><meshStandardMaterial color={COLORS.gold} emissive={COLORS.gold} emissiveIntensity={3} /></mesh>
-      <Html position={[10, 0, 0]} center><div className="text-[10px] text-gold font-black bg-black/95 px-2 border-2 border-gold whitespace-nowrap shadow-[0_0_20px_rgba(255,215,0,0.8)] animate-pulse">154TH_FLOOR // ABHED_ZONE</div></Html>
+      <Html position={[10, 0, 0]} center><div className="text-[10px] text-gold font-black bg-black/95 px-2 border-2 border-gold whitespace-nowrap shadow-[0_0_20px_rgba(255,215,0,0.8)] animate-pulse cursor-pointer">154TH_FLOOR // ABHED_ZONE</div></Html>
     </group>
     <mesh position={[0, 145, 0]}><sphereGeometry args={[1, 16, 16]} /><meshBasicMaterial color={COLORS.danger} /><pointLight intensity={10} distance={30} color={COLORS.danger} /></mesh>
   </group>
 );
 
 const BurjAlArab = ({ onSelect }: any) => (
-  <group position={[-150, 0, 100]} onClick={() => onSelect({ id: 'BURJ_AL_ARAB', type: 'STRUCTURE', pos: [-150, 0, 100], details: { lat: '25.1412', lng: '55.1852' } })}>
-    <mesh position={[0, 30, 0]}><boxGeometry args={[4, 60, 10]} /><meshStandardMaterial color={COLORS.cyan} wireframe emissive={COLORS.cyan} emissiveIntensity={0.4} /></mesh>
-    <mesh position={[10, 30, 0]} rotation={[0, 0, -0.3]}><planeGeometry args={[30, 55]} /><meshStandardMaterial color={COLORS.cyan} wireframe side={THREE.DoubleSide} transparent opacity={0.3} /></mesh>
-    <Html position={[0, 65, 0]} center><div className="text-[8px] text-neon-cyan font-black bg-black/90 px-2 border border-neon-cyan whitespace-nowrap uppercase">BURJ_AL_ARAB // NODE_02</div></Html>
+  <group position={[-250, 0, 300]} onClick={() => onSelect({ id: 'BURJ_AL_ARAB', type: 'STRUCTURE', pos: [-250, 0, 300], details: { lat: '25.1412', lng: '55.1852' } })}>
+    {/* Main sail spine */}
+    <mesh position={[0, 40, 0]}><boxGeometry args={[4, 80, 15]} /><meshStandardMaterial color={COLORS.cyan} wireframe emissive={COLORS.cyan} emissiveIntensity={0.4} /></mesh>
+    {/* Sail */}
+    <mesh position={[15, 40, 0]} rotation={[0, 0, -0.2]}><planeGeometry args={[40, 70]} /><meshStandardMaterial color={COLORS.cyan} wireframe side={THREE.DoubleSide} transparent opacity={0.3} /></mesh>
+    {/* Helipad */}
+    <mesh position={[-5, 60, 0]}><cylinderGeometry args={[8, 8, 1, 16]} /><meshStandardMaterial color={COLORS.cyan} wireframe /></mesh>
+    <Html position={[0, 85, 0]} center><div className="text-[10px] text-neon-cyan font-black bg-black/90 px-2 border border-neon-cyan whitespace-nowrap uppercase shadow-[0_0_15px_rgba(0,212,229,0.5)]">BURJ_AL_ARAB // SECTOR_JUMEIRAH</div></Html>
+  </group>
+);
+
+const BankOfEmirates = ({ onSelect }: any) => (
+  <group position={[200, 0, -150]} onClick={() => onSelect({ id: 'BANK_OF_EMIRATES', type: 'STRUCTURE', pos: [200, 0, -150], details: { lat: '25.2532', lng: '55.3344' } })}>
+    {/* Twin towers design */}
+    <mesh position={[-10, 30, 0]}><boxGeometry args={[15, 60, 15]} /><meshStandardMaterial color={COLORS.gold} wireframe emissive={COLORS.gold} emissiveIntensity={0.3} /></mesh>
+    <mesh position={[10, 30, 0]}><boxGeometry args={[15, 60, 15]} /><meshStandardMaterial color={COLORS.gold} wireframe emissive={COLORS.gold} emissiveIntensity={0.3} /></mesh>
+    <mesh position={[0, 50, 0]}><boxGeometry args={[35, 10, 15]} /><meshStandardMaterial color={COLORS.gold} wireframe /></mesh>
+    <Html position={[0, 70, 0]} center><div className="text-[10px] text-gold font-black bg-black/95 px-2 border border-gold whitespace-nowrap uppercase tracking-tighter">BANK_OF_EMIRATES // HQ_NODE</div></Html>
   </group>
 );
 
@@ -355,6 +379,7 @@ export const DubaiTacticalMap = () => {
               
               <BurjKhalifa onSelect={handleSelect} />
               <BurjAlArab onSelect={handleSelect} />
+              <BankOfEmirates onSelect={handleSelect} />
               
               {entities.map((e) => (
                 <EntityNode key={e.id} data={e} onSelect={handleSelect} />
