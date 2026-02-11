@@ -293,7 +293,7 @@ const LidarAgent = ({ id, position, onSelect }: any) => {
 
 // --- RECON ENGINE ---
 export const DubaiTacticalMap = () => {
-  const { openWindow, updateWindow } = useWindowManager();
+  const { focusWindow, updateWindow } = useWindowManager();
   const { addLog, history } = useTerminal();
   const [view, setView] = useState('ORBIT');
   const [selectedTarget, setSelectedTarget] = useState<any>(null);
@@ -334,7 +334,7 @@ export const DubaiTacticalMap = () => {
         {view === 'ORBIT' ? (
           <EarthSystem onSelectSat={(city: string) => {
             updateWindow('terminal', { isOpen: true });
-            openWindow('terminal');
+            focusWindow('terminal');
             addLog(`[ORBIT] ALIGNING SAT TO ${city}...`, 'info');
             setTimeout(() => setView(city), 1500);
           }} />
