@@ -61,7 +61,7 @@ const generateAgentData = (id: any): AgentData => ({
   ],
   intercepts: [
     'Packet burst detected: WhatsApp Encrypted',
-    'Location ping: Sector 09 (Palm)',
+    'Location ping: Active Sector',
     'Low-frequency audio intercepted',
     'External proxy rotation detected'
   ]
@@ -73,7 +73,7 @@ const generateVehicleData = (id: any): VehicleData => ({
   plate: `DXB ${id}`,
   speed: `${85 + (id % 40)} KM/H`,
   owner: 'AL-FUTTAIM LOGISTICS',
-  destination: 'DOWNTOWN_HUB'
+  destination: 'DISTRICT_CENTER'
 });
 
 // --- EARTH SYSTEM ---
@@ -99,8 +99,13 @@ const EarthSystem = ({ onSelectSat }: any) => {
         <sphereGeometry args={[10, 64, 64]} />
         <meshStandardMaterial map={cloudsMap} transparent opacity={0.4} blending={THREE.AdditiveBlending} />
       </mesh>
+      
+      {/* GLOBAL CONSTELLATION */}
       <OrbitalSatellite label="KH-11 [DUBAI]" orbitRadius={14} speed={0.2} offset={0} onHack={() => onSelectSat('DUBAI')} />
       <OrbitalSatellite label="SENTINEL [NYC]" orbitRadius={16} speed={0.15} offset={2} onHack={() => onSelectSat('NYC')} />
+      <OrbitalSatellite label="FALCON [ABU DHABI]" orbitRadius={13} speed={0.25} offset={4} onHack={() => onSelectSat('ABU_DHABI')} />
+      <OrbitalSatellite label="ODIN [LONDON]" orbitRadius={15} speed={0.18} offset={1} onHack={() => onSelectSat('LONDON')} />
+      <OrbitalSatellite label="Q-STAR [NEOM]" orbitRadius={17} speed={0.12} offset={5} onHack={() => onSelectSat('NEOM')} />
     </group>
   );
 };
@@ -122,7 +127,7 @@ const OrbitalSatellite = ({ label, orbitRadius, speed, offset, onHack }: any) =>
       <mesh position={[0.6, 0, 0]}><boxGeometry args={[0.8, 0.02, 0.4]} /><meshBasicMaterial color={COLORS.blue} wireframe /></mesh>
       <mesh position={[-0.6, 0, 0]}><boxGeometry args={[0.8, 0.02, 0.4]} /><meshBasicMaterial color={COLORS.blue} wireframe /></mesh>
       <Html distanceFactor={25}>
-        <div className="text-[8px] text-white font-black bg-black/80 px-1 border border-white/20 whitespace-nowrap hover:border-neon-cyan hover:text-neon-cyan cursor-pointer transition-colors p-1">
+        <div className="text-[8px] text-white font-black bg-black/80 px-1 border border-white/20 whitespace-nowrap hover:border-neon-cyan hover:text-neon-cyan cursor-pointer transition-colors p-1 uppercase">
           {label}
         </div>
       </Html>
@@ -214,7 +219,7 @@ const BurjKhalifa = ({ onSelect }: any) => (
     <mesh position={[0, 100, 0]}><cylinderGeometry args={[0.5, 2, 40, 4]} /><meshStandardMaterial color={COLORS.cyan} wireframe emissive={COLORS.cyan} emissiveIntensity={0.8} /></mesh>
     <group position={[0, 110, 0]} onClick={(e) => { e.stopPropagation(); onSelect({ id: 'ABHED_ZONE_154', type: 'VIP_TARGET' }); }}>
       <mesh><cylinderGeometry args={[1.5, 1.5, 2, 8]} /><meshStandardMaterial color={COLORS.gold} emissive={COLORS.gold} emissiveIntensity={2} /></mesh>
-      <Html position={[4, 0, 0]} center><div className="text-[10px] text-gold font-black bg-black/90 px-2 border border-gold whitespace-nowrap shadow-[0_0_15px_rgba(255,215,0,0.5)]">154TH FLOOR // ABHED_ZONE</div></Html>
+      <Html position={[4, 0, 0]} center><div className="text-[10px] text-gold font-black bg-black/90 px-2 border border-gold whitespace-nowrap shadow-[0_0_15px_rgba(255,215,0,0.5)] cursor-pointer">154TH FLOOR // ABHED_ZONE</div></Html>
     </group>
     <mesh position={[0, 145, 0]}><sphereGeometry args={[1, 16, 16]} /><meshBasicMaterial color={COLORS.danger} /><pointLight intensity={5} distance={20} color={COLORS.danger} /></mesh>
   </group>
@@ -226,7 +231,7 @@ const PalmJumeirah = ({ onSelect }: any) => (
     {Array.from({ length: 16 }).map((_, i) => (
       <mesh key={i} rotation={[-Math.PI / 2, 0, (i * Math.PI) / 8]} position={[0, 0.5, 0]}><planeGeometry args={[4, 80]} /><meshBasicMaterial color={COLORS.cyan} transparent opacity={0.4} /></mesh>
     ))}
-    <Html position={[0, 20, 0]} center><div className="text-[10px] text-neon-cyan font-black bg-black/80 px-2 border border-neon-cyan whitespace-nowrap">PALM JUMEIRAH // SECTOR_09</div></Html>
+    <Html position={[0, 20, 0]} center><div className="text-[10px] text-neon-cyan font-black bg-black/80 px-2 border border-neon-cyan whitespace-nowrap cursor-pointer hover:bg-cyan-500/20 transition-colors">PALM JUMEIRAH // SECTOR_09</div></Html>
   </group>
 );
 
@@ -250,7 +255,7 @@ const TrafficTrail = ({ curve, id, color, onSelect }: any) => {
     <>
       <mesh ref={ref} onClick={(e) => { e.stopPropagation(); onSelect({ id: `VEHICLE_${id}`, type: 'VEHICLE' }); }}>
         <sphereGeometry args={[1.5, 8, 8]} /><meshBasicMaterial color={color} /><pointLight intensity={3} distance={20} color={color} />
-        <Html distanceFactor={40} position={[0, 4, 0]} center><div className="text-[6px] text-white font-bold bg-black/60 px-1 border border-white/20">V_{id}</div></Html>
+        <Html distanceFactor={40} position={[0, 4, 0]} center><div className="text-[6px] text-white font-bold bg-black/60 px-1 border border-white/20 uppercase cursor-pointer">V_{id}</div></Html>
       </mesh>
     </>
   );
@@ -268,7 +273,7 @@ const LidarAgent = ({ id, position, onSelect }: any) => {
     <group ref={ref} position={position} onClick={(e) => { e.stopPropagation(); onSelect({ id, type: 'CIVILIAN_AGENT' }); }}>
       <mesh position={[0, 2, 0]}><boxGeometry args={[1, 4, 1]} /><meshStandardMaterial color={COLORS.purple} wireframe emissive={COLORS.purple} emissiveIntensity={0.5} /></mesh>
       <mesh position={[0, 25, 0]}><cylinderGeometry args={[0.1, 0.1, 50, 8]} /><meshBasicMaterial color={COLORS.purple} transparent opacity={0.1} /></mesh>
-      <Html distanceFactor={40} position={[0, 8, 0]} center><div className="text-[6px] text-purple-400 font-bold bg-black/90 px-2 py-0.5 border border-purple-500/50">DEVICE_{id} // LOCKED</div></Html>
+      <Html distanceFactor={40} position={[0, 8, 0]} center><div className="text-[6px] text-purple-400 font-bold bg-black/90 px-2 py-0.5 border border-purple-500/50 uppercase cursor-pointer">DEVICE_{id} // LOCKED</div></Html>
     </group>
   );
 };
@@ -295,12 +300,20 @@ export const DubaiTacticalMap = () => {
         setTimeout(() => {
           setBreachedTargets(prev => [...prev, targetId]);
           addLog(`[SUCCESS] TARGET COMPROMISED.`, 'success');
-        }, 1500);
+        }, 1000);
       }
     }
   }, [history, selectedTarget, addLog]);
 
   if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono tracking-[0.5em] animate-pulse">UPLINK_WAIT</div>;
+
+  const handleSelectSat = (city: string) => {
+    // INSTANT UPLINK
+    updateWindow('terminal', { isOpen: true });
+    focusWindow('terminal');
+    addLog(`[ORBIT] ALIGNING SAT TO ${city}...`, 'info');
+    setView(city); // Instant switch, no delay
+  };
 
   return (
     <div className="w-full h-full bg-black relative cursor-crosshair overflow-hidden pointer-events-auto select-none touch-none">
@@ -313,12 +326,7 @@ export const DubaiTacticalMap = () => {
           <pointLight position={[200, 400, 200]} intensity={3} color={COLORS.cyan} />
           
           {view === 'ORBIT' ? (
-            <EarthSystem onSelectSat={(city: string) => {
-              updateWindow('terminal', { isOpen: true });
-              focusWindow('terminal');
-              addLog(`[ORBIT] ALIGNING SAT TO ${city}...`, 'info');
-              setTimeout(() => setView(city), 1500);
-            }} />
+            <EarthSystem onSelectSat={handleSelectSat} />
           ) : (
             <group>
               <gridHelper args={[4000, 100, COLORS.cyan, '#050505']} position={[0, -0.4, 0]} />
@@ -344,8 +352,8 @@ export const DubaiTacticalMap = () => {
         <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar">
           {entities.slice(0, 15).map((e, i) => (
             <div key={i} className="bg-black/40 backdrop-blur-md border-l border-white/10 p-2">
-              <div className="text-[8px] text-white/60 font-bold">ID: {e.id}</div>
-              <div className="text-[7px] text-neon-cyan/80 font-mono">SIG: -{Math.floor(Math.random() * 40 + 40)}dBm</div>
+              <div className="text-[8px] text-white/60 font-bold uppercase">ID: {e.id}</div>
+              <div className="text-[7px] text-neon-cyan/80 font-mono italic">SIG: -{Math.floor(Math.random() * 40 + 40)}dBm</div>
             </div>
           ))}
         </div>
@@ -356,8 +364,8 @@ export const DubaiTacticalMap = () => {
           <Radio size={20} className="text-neon-cyan animate-pulse" />
           <div className="text-lg text-neon-cyan font-black tracking-widest uppercase italic">GHOST_SIGINT</div>
         </div>
-        <div className="text-[8px] text-white/40 uppercase">Targeting Sector: {view}</div>
-        {view !== 'ORBIT' && <button onClick={() => setView('ORBIT')} className="mt-4 px-4 py-1.5 border border-red-500 text-red-500 text-[9px] font-black pointer-events-auto hover:bg-red-500/20 transition-all uppercase">Reset_Downlink</button>}
+        <div className="text-[8px] text-white/40 uppercase tracking-tighter">Satellite: {view} // Uplink Stable</div>
+        {view !== 'ORBIT' && <button onClick={() => setView('ORBIT')} className="mt-4 px-4 py-1.5 border border-red-500 text-red-500 text-[9px] font-black pointer-events-auto hover:bg-red-500/20 transition-all uppercase active:scale-95">Reset_Downlink</button>}
       </div>
 
       <AnimatePresence>
