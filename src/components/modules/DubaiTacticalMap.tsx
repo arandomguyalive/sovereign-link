@@ -17,7 +17,7 @@ import * as THREE from 'three';
 import { useWindowManager } from '@/store/useWindowManager';
 import { useTerminal } from '@/store/useTerminal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, Satellite, Zap, ShieldAlert, Cpu, Crosshair, Activity, Database } from 'lucide-react';
+import { Globe, Satellite, Zap, ShieldAlert, Cpu, Crosshair, Activity, Database, Smartphone } from 'lucide-react';
 
 const COLORS = {
   cyan: '#00F0FF',
