@@ -8,11 +8,12 @@ import {
   PerspectiveCamera, 
   Html, 
   Float, 
-  MeshDistortMaterial, 
   MeshTransmissionMaterial,
-  KeyboardControls
+  Instances,
+  Instance,
+  Detailed
 } from '@react-three/drei';
-import { EffectComposer, Bloom, Noise, Vignette, Glitch, ChromaticAberration } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, Noise, Vignette, Glitch, ChromaticAberration, Scanline } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { useWindowManager } from '@/store/useWindowManager';
 import { useTerminal } from '@/store/useTerminal';
@@ -26,61 +27,75 @@ const COLORS = {
   purple: '#6B0098',
   gold: '#FFD700',
   danger: '#FF3333',
-  background: '#020202',
+  bg: '#010101'
 };
 
-// --- QUANTUM SHADER: Lidar Sweep Effect ---
-const LidarSweep = () => {
-  const meshRef = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    if (!meshRef.current) return;
-    meshRef.current.position.y = Math.sin(clock.getElapsedTime() * 0.5) * 50;
-  });
+// --- CORE: Massive Instanced City Grid ---
+const DenseCity = ({ count = 1500 }) => {
+  const range = 150;
+  const data = useMemo(() => {
+    const temp = [];
+    for (let i = 0; i < count; i++) {
+      const x = (Math.random() - 0.5) * range;
+      const z = (Math.random() - 0.5) * range;
+      // Clear path for landmarks
+      if (Math.abs(x) < 10 && Math.abs(z) < 10) continue; 
+      
+      const h = Math.random() * 12 + 2;
+      const w = Math.random() * 1.5 + 0.5;
+      temp.push({
+        position: [x, h / 2, z],
+        scale: [w, h, w],
+        id: `BLDG-${i}`
+      });
+    }
+    return temp;
+  }, [count]);
 
   return (
-    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[1000, 2]} />
-      <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.1} />
-    </mesh>
+    <group>
+      <Instances>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#050505" transparent opacity={0.8} metalness={1} roughness={0} />
+        {data.map((props, i) => (
+          <Instance key={i} {...props} />
+        ))}
+      </Instances>
+      {/* Wireframe Overlay for Buildings */}
+      <Instances>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshBasicMaterial color={COLORS.cyan} wireframe transparent opacity={0.1} />
+        {data.map((props, i) => (
+          <Instance key={i} {...props} />
+        ))}
+      </Instances>
+    </group>
   );
 };
 
-// --- STRUCTURAL SCAN: Burj Khalifa (Massive Detail) ---
+// --- CORE: High-Fidelity Landmarks ---
 const BurjKhalifa = ({ onHack }: any) => {
+  const ref = useRef<THREE.Group>(null);
   return (
-    <group position={[30, 0, -30]} onClick={(e) => { e.stopPropagation(); onHack("BURJ_CORE_RESTRICTED"); }}>
-      {/* Outer Shell */}
-      <mesh position={[0, 20, 0]}>
-        <cylinderGeometry args={[0.5, 4, 40, 6]} />
-        <meshBasicMaterial color={COLORS.cyan} wireframe opacity={0.2} transparent />
-      </mesh>
-      {/* Inner Volume (The "Glow") */}
-      <mesh position={[0, 20, 0]}>
-        <cylinderGeometry args={[0.4, 3.8, 39.8, 6]} />
-        <meshStandardMaterial 
-          color="#001133" 
-          emissive={COLORS.blue} 
-          emissiveIntensity={0.5} 
-          transparent 
-          opacity={0.4} 
-        />
-      </mesh>
-      {/* Floor Segmentation */}
-      {[...Array(20)].map((_, i) => (
-        <mesh key={i} position={[0, i * 2, 0]}>
-          <cylinderGeometry args={[4 - i*0.15, 4 - i*0.15, 0.05, 6]} />
-          <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.3} />
+    <group ref={ref} position={[0, 0, 0]} onClick={(e) => { e.stopPropagation(); onHack("BURJ_KHALIFA_SYSTEMS"); }}>
+      {/* Structural Segments */}
+      {[...Array(40)].map((_, i) => (
+        <mesh key={i} position={[0, i * 1.2, 0]}>
+          <cylinderGeometry args={[2 - i * 0.04, 2.2 - i * 0.04, 0.1, 6]} />
+          <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.4} />
         </mesh>
       ))}
-      {/* FLOOR 154 - High Sec Node */}
-      <group position={[0, 32, 0]} onClick={(e) => { e.stopPropagation(); onHack("FLOOR_154_VAULT"); }}>
-        <mesh>
-          <torusGeometry args={[2.5, 0.1, 16, 100]} />
-          <meshBasicMaterial color={COLORS.danger} />
-        </mesh>
+      {/* Inner Core */}
+      <mesh position={[0, 24, 0]}>
+        <cylinderGeometry args={[0.1, 2.5, 48, 6]} />
+        <meshBasicMaterial color={COLORS.blue} wireframe transparent opacity={0.2} />
+      </mesh>
+      {/* RESTRICTED ZONE */}
+      <group position={[0, 38, 0]} onClick={(e) => { e.stopPropagation(); onHack("FLOOR_154_VAULT"); }}>
+        <mesh><torusGeometry args={[3, 0.05, 16, 100]} /><meshBasicMaterial color={COLORS.danger} /></mesh>
         <Html distanceFactor={40}>
-          <div className="bg-red-950/90 border-2 border-red-500 p-2 font-black text-red-500 text-[10px] animate-pulse whitespace-nowrap">
-            ⚠ TARGET: FLOOR_154 // SIGINT_LOCKED
+          <div className="bg-red-600 text-white font-black px-2 py-1 text-[10px] animate-pulse whitespace-nowrap border-2 border-white shadow-[0_0_20px_#ff0000]">
+            ⚠ TOP_PRIORITY_HACK: FLOOR_154
           </div>
         </Html>
       </group>
@@ -88,224 +103,222 @@ const BurjKhalifa = ({ onHack }: any) => {
   );
 };
 
-// --- STRUCTURAL SCAN: Palm Jumeirah (Digital Twin) ---
-const PalmJumeirah = () => (
-  <group position={[-50, 0.1, 20]} rotation={[-Math.PI/2, 0, -0.5]}>
-    <mesh><ringGeometry args={[2, 15, 64]} /><meshBasicMaterial color={COLORS.purple} wireframe opacity={0.2} /></mesh>
-    {[...Array(16)].map((_, i) => (
-      <group key={i} rotation={[0, 0, (i/16) * Math.PI * 2]}>
-        <mesh position={[0, 8, 0]}>
-          <planeGeometry args={[1, 12]} />
-          <meshBasicMaterial color={COLORS.purple} transparent opacity={0.1} />
-        </mesh>
-        <lineSegments position={[0, 8, 0]}>
-          <edgesGeometry args={[new THREE.PlaneGeometry(1, 12)]} />
-          <lineBasicMaterial color={COLORS.purple} opacity={0.5} transparent />
-        </lineSegments>
-      </group>
-    ))}
+const BurjAlArab = () => (
+  <group position={[-25, 0, 15]} rotation={[0, Math.PI / 4, 0]}>
+    <mesh position={[0, 8, 0]}>
+      <cylinderGeometry args={[0, 4, 16, 3]} />
+      <meshBasicMaterial color="white" wireframe transparent opacity={0.3} />
+    </mesh>
+    <mesh position={[0, 12, 2.5]} rotation={[Math.PI / 2, 0, 0]}>
+      <cylinderGeometry args={[1.5, 1.5, 0.1, 32]} />
+      <meshBasicMaterial color={COLORS.gold} />
+    </mesh>
+    <Html position={[0, 18, 0]} distanceFactor={50}>
+      <div className="text-[10px] text-white font-black border border-white px-2 bg-black/80">BURJ_AL_ARAB_HUB</div>
+    </Html>
   </group>
 );
 
-// --- AGENT TRACKING: Lidar Human (Detailed) ---
+// --- CORE: Traffic Artery System ---
+const TrafficArtery = ({ path, color, count = 100, speed = 1 }: any) => {
+  const [offsets] = useState(() => Array.from({ length: count }, () => Math.random()));
+  return (
+    <group>
+      {offsets.map((offset, i) => (
+        <Vehicle key={i} path={path} color={color} offset={offset} speed={speed} />
+      ))}
+    </group>
+  );
+};
+
+const Vehicle = ({ path, color, offset, speed }: any) => {
+  const mesh = useRef<THREE.Mesh>(null);
+  useFrame((state) => {
+    if (!mesh.current) return;
+    const t = (state.clock.getElapsedTime() * speed * 0.05 + offset) % 1;
+    const pos = path.getPointAt(t);
+    mesh.current.position.set(pos.x, 0.2, pos.z);
+  });
+  return (
+    <mesh ref={mesh}>
+      <sphereGeometry args={[0.15, 8, 8]} />
+      <meshBasicMaterial color={color} />
+      <pointLight color={color} intensity={1} distance={2} />
+    </group>
+  );
+};
+
+// --- CORE: LIDAR Human Agents ---
 const LidarAgent = ({ position, onInspect }: any) => {
-  const ref = useRef<THREE.Group>(null);
-  const [speed] = useState(0.02 + Math.random() * 0.03);
+  const group = useRef<THREE.Group>(null);
+  const [speed] = useState(0.02 + Math.random() * 0.04);
+  const [offset] = useState(Math.random() * 100);
   
   useFrame((state) => {
-    if (!ref.current) return;
-    const t = state.clock.getElapsedTime();
-    ref.current.position.x += Math.sin(t * speed + position[0]) * 0.05;
-    ref.current.position.z += Math.cos(t * speed + position[2]) * 0.05;
+    if (!group.current) return;
+    const t = state.clock.getElapsedTime() + offset;
+    group.current.position.x += Math.sin(t * 0.2) * speed;
+    group.current.position.z += Math.cos(t * 0.2) * speed;
   });
 
   return (
-    <group ref={ref} position={position} onClick={(e) => { e.stopPropagation(); onInspect(); }}>
-      <mesh position={[0, 0.9, 0]}>
-        <capsuleGeometry args={[0.15, 0.6, 4, 8]} />
-        <meshBasicMaterial color="#fff" wireframe />
-      </mesh>
-      <mesh position={[0, 0.1, 0]} rotation={[-Math.PI/2, 0, 0]}>
-        <ringGeometry args={[0.4, 0.5, 16]} />
-        <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.5} />
-      </mesh>
-      <Html distanceFactor={15} position={[0, 2, 0]}>
-        <div className="text-[6px] text-white/40 font-mono">ID: {Math.random().toString(16).slice(2,8)}</div>
-      </Html>
+    <group ref={group} position={position} onClick={(e) => { e.stopPropagation(); onInspect(); }}>
+      <mesh position={[0, 0.9, 0]}><capsuleGeometry args={[0.15, 0.6, 4, 8]} /><meshBasicMaterial color="#fff" wireframe /></mesh>
+      <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, 0.1, 0]}><ringGeometry args={[0.4, 0.5, 16]} /><meshBasicMaterial color={COLORS.cyan} transparent opacity={0.5} /></mesh>
     </group>
   );
 };
 
-// --- ORBITAL COMMAND: Satellite Launcher ---
-const OrbitalSatellite = ({ id, label, position, onHack, cracked }: any) => {
-  const ref = useRef<THREE.Group>(null);
-  useFrame((state) => {
-    if (!ref.current) return;
-    ref.current.rotation.y += 0.01;
-    ref.current.position.y += Math.sin(state.clock.getElapsedTime()) * 0.01;
-  });
-
-  return (
-    <group position={position} ref={ref} onClick={() => onHack(id)}>
-      <mesh>
-        <boxGeometry args={[1, 0.5, 0.8]} />
-        <meshStandardMaterial color={cracked ? '#00ff00' : '#fff'} metalness={1} roughness={0} />
-      </mesh>
-      <mesh position={[1.5, 0, 0]}><boxGeometry args={[2, 0.05, 1]} /><meshBasicMaterial color={COLORS.blue} wireframe /></mesh>
-      <mesh position={[-1.5, 0, 0]}><boxGeometry args={[2, 0.05, 1]} /><meshBasicMaterial color={COLORS.blue} wireframe /></mesh>
-      <Html distanceFactor={20} position={[0, 2, 0]}>
-        <div className={`p-2 border font-mono text-[10px] whitespace-nowrap ${cracked ? 'bg-emerald-950/90 border-emerald-500 text-emerald-400' : 'bg-black/90 border-white/20 text-white'}`}>
-          <div className="flex items-center gap-2">
-            <Satellite size={14} />
-            <span className="font-black tracking-widest uppercase">{label}</span>
-          </div>
-          <div className="text-[7px] text-white/40 mt-1 uppercase tracking-widest">Awaiting_Downlink...</div>
-        </div>
-      </Html>
-    </group>
-  );
-};
-
-// --- MAIN ENGINE ---
+// --- MAIN ENGINE: GOD-EYE OMNISCIENT ---
 export const DubaiTacticalMap = () => {
   const { openWindow, updateWindow } = useWindowManager();
   const { addLog } = useTerminal();
   const [view, setView] = useState<'ORBIT' | 'GROUND'>('ORBIT');
   const [crackedSats, setCrackedSats] = useState<string[]>([]);
-  const [selectedEntity, setSelectedEntity] = useState<any>(null);
+  const [selected, setSelected] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
-  const handleSatHack = (id: string) => {
+  const handleHack = (id: string) => {
     if (crackedSats.includes(id)) { setView('GROUND'); return; }
-    updateWindow('terminal', { isOpen: true, title: `BYPASSING // ${id}` });
+    updateWindow('terminal', { isOpen: true });
     openWindow('terminal');
-    addLog(`[!] INITIATING QUANTUM INJECTION ON ${id}...`, 'warning');
+    addLog(`[!] INJECTING MALWARE INTO ${id} ORBITAL_UPLINK...`, 'warning');
     setTimeout(() => {
       setCrackedSats(prev => [...prev, id]);
-      addLog(`[SUCCESS] UPLINK SYNCHRONIZED. DESCENDING...`, 'success');
       setView('GROUND');
+      addLog(`[SUCCESS] SATELLITE HIJACK COMPLETE. DOWNLINK ESTABLISHED.`, 'success');
     }, 2000);
   };
 
   const handleInspect = (target: any) => {
-    setSelectedEntity(target);
+    setSelected(target);
     updateWindow('terminal', { isOpen: true });
     openWindow('terminal');
-    addLog(`[SIGINT] TARGET LOCKED: ${target.id || 'HUMANOID'}`, 'info');
+    addLog(`[SIGINT] TARGET_LOCKED: ${target.id}`, 'info');
   };
 
-  if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono tracking-[1em] animate-pulse">QUANTUM_BOOT</div>;
+  const highwayPath = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-100, 0, 50),
+    new THREE.Vector3(-50, 0, 20),
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(50, 0, -20),
+    new THREE.Vector3(100, 0, -50),
+  ]), []);
+
+  if (!mounted) return <div className="w-full h-full bg-black flex items-center justify-center text-neon-cyan font-mono tracking-[1em] animate-pulse">OMNISCIENT_SYSTEM_BOOT</div>;
 
   return (
     <div className="w-full h-full bg-[#010101] relative cursor-crosshair overflow-hidden pointer-events-auto">
-      <Canvas shadows gl={{ antialias: false }}>
-        <PerspectiveCamera makeDefault position={view === 'ORBIT' ? [0, 20, 30] : [0, 100, 100]} fov={view === 'ORBIT' ? 45 : 30} />
-        <MapControls enableDamping dampingFactor={0.05} minDistance={5} maxDistance={300} maxPolarAngle={Math.PI / 2.1} />
+      <Canvas shadows dpr={[1, 2]}>
+        <PerspectiveCamera makeDefault position={view === 'ORBIT' ? [0, 20, 30] : [0, 80, 80]} fov={35} />
+        <MapControls enableDamping dampingFactor={0.05} minDistance={10} maxDistance={400} maxPolarAngle={Math.PI / 2.1} />
         <Stars radius={200} count={10000} factor={4} fade />
         
         <ambientLight intensity={0.5} />
-        <pointLight position={[10, 100, 10]} intensity={2} color={COLORS.cyan} />
+        <pointLight position={[50, 100, 50]} intensity={2} color={COLORS.cyan} />
 
-        <Suspense fallback={null}>
-          {view === 'ORBIT' ? (
-            <group rotation={[0, 0, 0.4]}>
-              <mesh><sphereGeometry args={[10, 64, 64]} /><meshStandardMaterial color="#051030" metalness={0.9} roughness={0.1} /></mesh>
-              <OrbitalSatellite id="KH-11" label="KH-11 // Dubai" position={[14, 4, 10]} onHack={handleSatHack} cracked={crackedSats.includes('KH-11')} />
-              <OrbitalSatellite id="SENT-6" label="Sentinel-6 // NYC" position={[-12, 8, 12]} onHack={handleSatHack} cracked={crackedSats.includes('SENT-6')} />
+        {view === 'ORBIT' ? (
+          <group rotation={[0, 0, 0.4]}>
+            <mesh><sphereGeometry args={[10, 64, 64]} /><meshStandardMaterial color="#051030" metalness={1} roughness={0} /></mesh>
+            <group position={[14, 2, 10]} onClick={() => handleHack('KH-11')}>
+              <mesh><boxGeometry args={[1, 0.5, 0.8]} /><meshStandardMaterial color={crackedSats.includes('KH-11') ? '#0f0' : '#fff'} /></mesh>
+              <Html distanceFactor={20} position={[0, 2, 0]}><div className="text-[10px] text-white font-black bg-black/80 px-2 border border-white">KH-11 [DUBAI]</div></Html>
             </group>
-          ) : (
-            <group>
-              <LidarSweep />
-              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
-                <planeGeometry args={[1000, 1000, 100, 100]} />
-                <meshBasicMaterial color="#050505" wireframe opacity={0.1} transparent />
-              </mesh>
-              
-              <BurjKhalifa onHack={(id: string) => handleInspect({ id, type: 'CRITICAL' })} />
-              <PalmJumeirah />
-              
-              {[...Array(60)].map((_, i) => (
-                <LidarAgent key={i} position={[(Math.random()-0.5)*150, 0, (Math.random()-0.5)*150]} onInspect={() => handleInspect({ id: `NODE_${9000+i}`, type: 'BIOMETRIC' })} />
-              ))}
-            </group>
-          )}
-        </Suspense>
+          </group>
+        ) : (
+          <group>
+            <DenseCity />
+            <BurjKhalifa onHack={(id: string) => handleInspect({ id, type: 'CORE' })} />
+            <BurjAlArab />
+            
+            {/* Traffic Streams */}
+            <TrafficArtery path={highwayPath} color={COLORS.traffic_white} speed={2} count={50} />
+            <TrafficArtery path={highwayPath} color={COLORS.traffic_red} speed={1.5} count={50} />
 
-        <EffectComposer enableNormalPass={false}>
-          <Bloom luminanceThreshold={0.2} mipmapBlur intensity={1.5} radius={0.4} />
+            {[...Array(80)].map((_, i) => (
+              <LidarAgent key={i} position={[(Math.random()-0.5)*180, 0, (Math.random()-0.5)*180]} onInspect={() => handleInspect({ id: `NODE_${8000+i}` })} />
+            ))}
+          </group>
+        )}
+
+        <EffectComposer disableNormalPass>
+          <Bloom luminanceThreshold={0.1} intensity={2} mipmapBlur radius={0.5} />
+          <Scanline opacity={0.1} />
           <Noise opacity={0.05} />
-          <Vignette eskil={false} offset={0.1} darkness={1.1} />
-          <ChromaticAberration offset={new THREE.Vector2(0.001, 0.001)} />
+          <Glitch delay={new THREE.Vector2(2, 5)} duration={new THREE.Vector2(0.1, 0.3)} strength={new THREE.Vector2(0.1, 0.2)} />
+          <ChromaticAberration offset={new THREE.Vector2(0.002, 0.002)} />
         </EffectComposer>
       </Canvas>
 
       {/* GOD EYE INTERFACE HUD */}
       <div className="absolute top-4 left-4 font-mono pointer-events-none select-none">
         <div className="flex items-center gap-3 mb-2">
-          <Globe size={24} className="text-neon-cyan animate-spin-slow" />
-          <div className="text-2xl text-neon-cyan font-black tracking-[0.5em] shadow-[0_0_20px_#00F0FF]">GOD_EYE_QUANTUM</div>
+          <Globe size={32} className="text-neon-cyan animate-spin-slow" />
+          <div className="text-3xl text-neon-cyan font-black tracking-[0.5em] italic">GHOST_OMNISCIENT_V18</div>
         </div>
-        <div className="text-[10px] text-white/40 mb-6 uppercase tracking-widest">Downlink: {view} // Locked: {crackedSats.length}</div>
+        <div className="text-[10px] text-white/40 mb-6 uppercase tracking-widest">Global surveillance // Uplink: {view}</div>
         
         {view !== 'ORBIT' && (
-          <motion.button 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          <button 
             onClick={() => setView('ORBIT')} 
-            className="px-6 py-2 border-2 border-red-500 text-red-500 text-[11px] font-black uppercase pointer-events-auto hover:bg-red-500/20 transition-all shadow-[0_0_30px_rgba(255,0,0,0.3)]"
+            className="px-8 py-3 border-2 border-red-500 text-red-500 text-xs font-black uppercase pointer-events-auto hover:bg-red-500/20 transition-all shadow-[0_0_40px_rgba(255,0,0,0.4)]"
           >
-            TERMINATE_UPLINK
-          </motion.button>
+            TERMINATE_DOWNLINK
+          </button>
         )}
       </div>
 
       <AnimatePresence>
-        {selectedEntity && (
-          <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} className="absolute top-20 right-4 w-96 bg-black/95 border-l-4 border-neon-cyan p-6 font-mono z-[2000] shadow-[0_0_50px_rgba(0,0,0,1)] pointer-events-auto">
-            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-              <div className="text-sm text-neon-cyan font-black tracking-widest uppercase">Deep_Scan // {selectedEntity.id}</div>
-              <button onClick={() => setSelectedEntity(null)} className="text-white/40 hover:text-white transition-colors">X</button>
+        {selected && (
+          <motion.div initial={{ x: 500 }} animate={{ x: 0 }} exit={{ x: 500 }} className="absolute top-20 right-4 w-[450px] bg-black/95 border-l-4 border-neon-cyan p-8 font-mono z-[2000] shadow-2xl pointer-events-auto">
+            <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
+              <div className="text-xl text-neon-cyan font-black tracking-widest italic">SIGNAL_EXTRACTED // {selected.id}</div>
+              <button onClick={() => setSelected(null)} className="text-white hover:text-red-500 transition-colors">X</button>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="bg-white/5 p-3 border-l-2 border-neon-cyan">
-                <div className="text-[8px] text-white/40">LATITUDE</div>
-                <div className="text-[11px] text-white font-black">{ (Math.random() * 10 + 25).toFixed(4) }° N</div>
+            <div className="grid grid-cols-2 gap-6 mb-10 text-white/80">
+              <div className="bg-white/5 p-4 border-l-2 border-neon-cyan shadow-xl">
+                <div className="text-[9px] text-white/40 mb-1">LAT_COORD</div>
+                <div className="text-lg font-black tracking-tighter">25.2048° N</div>
               </div>
-              <div className="bg-white/5 p-3 border-l-2 border-neon-cyan">
-                <div className="text-[8px] text-white/40">LONGITUDE</div>
-                <div className="text-[11px] text-white font-black">{ (Math.random() * 10 + 55).toFixed(4) }° E</div>
+              <div className="bg-white/5 p-4 border-l-2 border-neon-cyan shadow-xl">
+                <div className="text-[9px] text-white/40 mb-1">LONG_COORD</div>
+                <div className="text-lg font-black tracking-tighter">55.2708° E</div>
               </div>
             </div>
 
-            <div className="space-y-3 max-h-[40vh] overflow-y-auto scrollbar-hide">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between bg-zinc-900/50 p-3 border border-white/5 hover:border-emerald-500/50 transition-all">
-                  <div className="flex items-center gap-3">
-                    <Smartphone size={16} className="text-emerald-400" />
-                    <div>
-                      <div className="text-[10px] text-white font-bold">DEVICE_UPLINK_{i+1}</div>
-                      <div className="text-[8px] text-white/30">MAC: {Math.random().toString(16).slice(2,10).toUpperCase()}</div>
+            <div className="space-y-4">
+              <div className="text-xs text-neon-cyan font-black mb-2 uppercase tracking-widest">Active_Endpoints_Detected:</div>
+              <div className="h-[300px] overflow-y-auto scrollbar-hide space-y-2">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between bg-zinc-900/80 p-4 border border-white/5 hover:border-emerald-500 transition-all">
+                    <div className="flex items-center gap-4">
+                      <Smartphone size={20} className="text-emerald-400" />
+                      <div>
+                        <div className="text-[11px] text-white font-black">UID: {Math.random().toString(16).slice(2,10).toUpperCase()}</div>
+                        <div className="text-[9px] text-white/30 tracking-widest">MAC: {Array(6).fill(0).map(() => Math.floor(Math.random()*256).toString(16).padStart(2,'0')).join(':').toUpperCase()}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] text-emerald-400 font-black animate-pulse">UPLINK_STABLE</div>
+                      <div className="text-[9px] text-white/20">SNR: 42dBm</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-[9px] text-emerald-400 font-black">STABLE</div>
-                    <div className="text-[8px] text-white/20">RSSI: -{Math.floor(Math.random()*40+50)}dBm</div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            <button className="w-full mt-8 py-3 bg-emerald-500/10 border-2 border-emerald-500 text-emerald-500 text-[10px] font-black hover:bg-emerald-500/20 uppercase tracking-[0.2em] transition-all">
-              Initiate_Full_Data_Exfiltration
+            <button className="w-full mt-10 py-4 bg-emerald-500/10 border-2 border-emerald-500 text-emerald-500 text-xs font-black hover:bg-emerald-500/30 uppercase tracking-[0.3em] transition-all shadow-[0_0_30px_rgba(0,255,0,0.2)]">
+              EXFILTRATE_FULL_MEMORY_DUMP
             </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-30">
-        <Crosshair size={80} className="text-neon-cyan" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+        <Crosshair size={100} className="text-neon-cyan" strokeWidth={1} />
       </div>
     </div>
   );
