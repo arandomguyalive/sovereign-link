@@ -27,7 +27,9 @@ const COLORS = {
   purple: '#6B0098',
   gold: '#FFD700',
   danger: '#FF3333',
-  bg: '#010101'
+  bg: '#010101',
+  traffic_white: '#ffffff',
+  traffic_red: '#ff0000'
 };
 
 // --- CORE: Massive Instanced City Grid ---
