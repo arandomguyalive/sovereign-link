@@ -44,8 +44,8 @@ const DenseCity = ({ count = 1500 }) => {
       const h = Math.random() * 12 + 2;
       const w = Math.random() * 1.5 + 0.5;
       temp.push({
-        position: [x, h / 2, z],
-        scale: [w, h, w],
+        position: [x, h / 2, z] as [number, number, number],
+        scale: [w, h, w] as [number, number, number],
         id: `BLDG-${i}`
       });
     }
@@ -163,8 +163,14 @@ const LidarAgent = ({ position, onInspect }: any) => {
 
   return (
     <group ref={group} position={position} onClick={(e) => { e.stopPropagation(); onInspect(); }}>
-      <mesh position={[0, 0.9, 0]}><capsuleGeometry args={[0.15, 0.6, 4, 8]} /><meshBasicMaterial color="#fff" wireframe /></mesh>
-      <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, 0.1, 0]}><ringGeometry args={[0.4, 0.5, 16]} /><meshBasicMaterial color={COLORS.cyan} transparent opacity={0.5} /></mesh>
+      <mesh position={[0, 0.9, 0]}>
+        <capsuleGeometry args={[0.15, 0.6, 4, 8]} />
+        <meshBasicMaterial color="#fff" wireframe />
+      </mesh>
+      <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, 0.1, 0]}>
+        <ringGeometry args={[0.4, 0.5, 16]} />
+        <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.5} />
+      </mesh>
     </group>
   );
 };
@@ -243,7 +249,7 @@ export const DubaiTacticalMap = () => {
           </group>
         )}
 
-        <EffectComposer disableNormalPass>
+        <EffectComposer disableNormalPass={false}>
           <Bloom luminanceThreshold={0.1} intensity={2} mipmapBlur radius={0.5} />
           <Scanline opacity={0.1} />
           <Noise opacity={0.05} />
