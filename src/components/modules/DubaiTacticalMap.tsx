@@ -153,6 +153,27 @@ const BurjKhalifa = ({ onSelect }: any) => (
     <mesh position={[0, 40, 0]}><cylinderGeometry args={[2, 3, 80, 4]} /><meshStandardMaterial color={COLORS.cyan} wireframe emissive={COLORS.cyan} emissiveIntensity={0.5} /></mesh>
     <mesh position={[0, 100, 0]}><cylinderGeometry args={[0.5, 2, 40, 4]} /><meshStandardMaterial color={COLORS.cyan} wireframe emissive={COLORS.cyan} emissiveIntensity={0.8} /></mesh>
     <mesh position={[0, 130, 0]}><cylinderGeometry args={[0.01, 0.5, 20, 4]} /><meshStandardMaterial color={COLORS.cyan} wireframe emissive={COLORS.cyan} emissiveIntensity={1.2} /></mesh>
+    
+    {/* 154th Floor - The Lounge / Abhed Zone */}
+    <group position={[0, 110, 0]} onClick={(e) => { e.stopPropagation(); onSelect({ id: 'ABHED_ZONE_154', type: 'VIP_TARGET', status: 'CLASSIFIED' }); }}>
+      <mesh>
+        <cylinderGeometry args={[1.5, 1.5, 2, 8]} />
+        <meshStandardMaterial color={COLORS.gold} emissive={COLORS.gold} emissiveIntensity={2} />
+      </mesh>
+      <mesh rotation={[0, 0, Math.PI / 2]}>
+        <ringGeometry args={[2, 2.5, 32]} />
+        <meshBasicMaterial color={COLORS.gold} side={THREE.DoubleSide} transparent opacity={0.6} />
+      </mesh>
+      <Html position={[4, 0, 0]} center>
+        <div className="flex items-center gap-2">
+           <div className="w-8 h-[1px] bg-gold" />
+           <div className="text-[10px] text-gold font-black bg-black/90 px-2 border border-gold whitespace-nowrap uppercase tracking-widest shadow-[0_0_20px_rgba(255,215,0,0.5)] hover:scale-110 transition-transform cursor-pointer">
+             154TH FLOOR // ABHED_ZONE
+           </div>
+        </div>
+      </Html>
+    </group>
+
     {/* Beacons */}
     <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
       <mesh position={[0, 145, 0]}>
@@ -179,8 +200,14 @@ const BurjAlArab = ({ onSelect }: any) => (
   </group>
 );
 
-const PalmJumeirah = () => (
-  <group position={[-120, 0, -100]}>
+const PalmJumeirah = ({ onSelect }: any) => (
+  <group position={[-120, 0, -100]} onClick={(e) => { e.stopPropagation(); onSelect({ id: 'PALM_JUMEIRAH', type: 'DISTRICT', status: 'SURVEILLANCE_ACTIVE' }); }}>
+    {/* Interactive Hitbox */}
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+      <circleGeometry args={[90, 16]} />
+      <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.05} />
+    </mesh>
+    
     {Array.from({ length: 16 }).map((_, i) => (
       <mesh key={i} rotation={[-Math.PI / 2, 0, (i * Math.PI) / 8]} position={[0, 0.5, 0]}>
         <planeGeometry args={[4, 80]} />
@@ -195,6 +222,11 @@ const PalmJumeirah = () => (
       <circleGeometry args={[85, 64]} />
       <meshBasicMaterial color="#001122" transparent opacity={0.2} />
     </mesh>
+    <Html position={[0, 20, 0]} center>
+      <div className="text-[8px] text-neon-cyan font-black bg-black/80 px-2 border border-neon-cyan whitespace-nowrap uppercase tracking-widest hover:bg-neon-cyan/20 cursor-pointer transition-colors">
+        Palm Jumeirah // Sector_09
+      </div>
+    </Html>
   </group>
 );
 
@@ -331,6 +363,25 @@ const NeuralGrid = () => {
   );
 };
 
+// --- ZONE MARKERS ---
+const ZoneMarker = ({ position, label }: any) => (
+  <group position={position}>
+    <mesh position={[0, 0, 0]}>
+      <circleGeometry args={[2, 32]} />
+      <meshBasicMaterial color={COLORS.danger} transparent opacity={0.2} />
+    </mesh>
+    <mesh rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[2, 2.2, 32]} />
+      <meshBasicMaterial color={COLORS.danger} transparent opacity={0.5} />
+    </mesh>
+    <Html position={[0, 4, 0]} center>
+      <div className="text-[6px] text-red-500 font-bold bg-black/80 px-1 border border-red-500/50 whitespace-nowrap uppercase tracking-widest">
+        {label}
+      </div>
+    </Html>
+  </group>
+);
+
 // --- RECON ENGINE ---
 export const DubaiTacticalMap = () => {
   const { focusWindow, updateWindow } = useWindowManager();
@@ -387,8 +438,12 @@ export const DubaiTacticalMap = () => {
               <BurjKhalifa onSelect={setSelectedTarget} />
               <BurjAlArab onSelect={setSelectedTarget} />
               <AinDubai onSelect={setSelectedTarget} />
-              <PalmJumeirah />
+              <PalmJumeirah onSelect={setSelectedTarget} />
               <TrafficTrails />
+              
+              <ZoneMarker position={[100, 0, 100]} label="DOWNTOWN_SECTOR" />
+              <ZoneMarker position={[-200, 0, -50]} label="MARINA_DISTRICT" />
+              <ZoneMarker position={[50, 0, -200]} label="DEIRA_CORE" />
               
               {Array.from({ length: 50 }).map((_, i) => (
                 <LidarAgent 
