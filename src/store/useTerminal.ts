@@ -17,11 +17,13 @@ interface TerminalState {
   history: TerminalLine[];
   traceLevel: number;
   isLocked: boolean;
+  isHacking: boolean;
   hackedFiles: HackedFile[];
   addLog: (text: string, type?: TerminalLine['type']) => void;
   clearHistory: () => void;
   incrementTrace: (amount: number) => void;
   setLocked: (locked: boolean) => void;
+  setHacking: (hacking: boolean) => void;
   addFile: (file: HackedFile) => void;
 }
 
@@ -32,6 +34,7 @@ export const useTerminal = create<TerminalState>((set) => ({
   ],
   traceLevel: 0,
   isLocked: false,
+  isHacking: false,
   hackedFiles: [],
   addLog: (text, type = 'output') => set((state) => ({
     history: [...state.history, { id: Math.random().toString(36), text, type, timestamp: Date.now() }]
@@ -41,6 +44,7 @@ export const useTerminal = create<TerminalState>((set) => ({
     traceLevel: Math.min(100, state.traceLevel + amount)
   })),
   setLocked: (locked) => set({ isLocked: locked }),
+  setHacking: (hacking) => set({ isHacking: hacking }),
   addFile: (file) => set((state) => ({
     hackedFiles: [...state.hackedFiles, file]
   })),

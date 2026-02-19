@@ -7,7 +7,7 @@ import { useWindowManager } from '@/store/useWindowManager';
 
 export const Terminal = () => {
   const [input, setInput] = useState('');
-  const { history, addLog, clearHistory, traceLevel, incrementTrace, addFile } = useTerminal();
+  const { history, addLog, clearHistory, traceLevel, incrementTrace, addFile, isHacking, setHacking } = useTerminal();
   const { currentPath, cd, fs } = useFileSystem();
   const { openWindow } = useWindowManager();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -18,6 +18,60 @@ export const Terminal = () => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [history]);
+
+  useEffect(() => {
+    if (!isHacking) return;
+
+    let step = 0;
+    const interval = setInterval(() => {
+      const logs = [
+        { text: ">> INITIATING SATELLITE BREACH: AL-QURAIN_SAT_01", type: "warning" as const },
+        { text: "[+] FETCHING TLE DATA FROM NORAD... SUCCESS", type: "success" as const },
+        { text: "[*] CALCULATING ORBITAL MECHANICS: VEL=7.6km/s ALT=358km", type: "info" as const },
+        { text: "[*] ESTIMATING DOPPLER SHIFT: +4.2kHz... LOCKING ON CARRIER", type: "info" as const },
+        { text: ">> HANDSHAKE: GS_DUBAI_CENTRAL -> AQ_SAT_01", type: "warning" as const },
+        { text: "[+] INJECTING AES-256 BYPASS (MAN-IN-THE-MIDDLE)...", type: "warning" as const },
+        { text: "[+] UPLINK SYNC: 14.2 GHz... BANDWIDTH OPTIMIZED", type: "success" as const },
+        { text: "[*] TELEMETRY PACKET INTERCEPTED: BAT=82% TEMP=14C", type: "info" as const },
+        { text: ">> EXPLOITING CVE-2025-8821 (GND_SYSTEM_VULNERABILITY)", type: "error" as const },
+        { text: "[+] BYPASSING KERNEL AUTHENTICATION... [##########] 100%", type: "success" as const },
+        { text: ">> ACCESS GRANTED: COMMAND_BUFFER_R/W", type: "success" as const },
+        { text: "[!] OVERRIDING ATTITUDE CONTROL... ADJUSTING YAW: +2.5 deg", type: "warning" as const },
+        { text: "[*] DOWNLOADING CLASSIFIED ENCRYPTED_MAP_DATA.pkg...", type: "info" as const },
+        { text: "[+] EXFILTRATING... PACKET 102/4482 [####------]", type: "info" as const },
+        { text: "[+] EXFILTRATING... PACKET 450/4482 [#####-----]", type: "info" as const },
+        { text: "[+] EXFILTRATING... PACKET 980/4482 [######----]", type: "info" as const },
+        { text: "[!] TRACE DETECTION TRIGGERED: DISCONNECT ADVISED", type: "error" as const },
+        { text: "[+] EXFILTRATING... PACKET 1420/4482 [#######---]", type: "info" as const },
+        { text: "[+] EXFILTRATING... PACKET 1980/4482 [########--]", type: "info" as const },
+        { text: ">> INJECTING GHOST_ROOTKIT into SAT_OS_v4.2", type: "warning" as const },
+        { text: "[SUCCESS] PERSISTENCE ESTABLISHED. SAT_LINK_HIDDEN", type: "success" as const },
+      ];
+
+      const log = logs[step % logs.length];
+      addLog(log.text, log.type);
+      
+      if (step % 5 === 0) incrementTrace(2);
+      
+      step++;
+    }, 1200);
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'x' || e.key === 'X') {
+        e.preventDefault();
+        setHacking(false);
+        addLog(">> HACKING SEQUENCE TERMINATED BY USER.", "error");
+        clearInterval(interval);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [isHacking]);
 
   const handleCommand = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,13 +90,19 @@ export const Terminal = () => {
     switch (cmd.toLowerCase()) {
       case 'help':
         addLog('AVAILABLE PROTOCOLS:', 'info');
-        addLog('  crack [TARGET] [TYPE]   Initiate breach sequence (e.g., crack NBD_VAULT BANK)', 'success');
+        addLog('  crack [TARGET] [TYPE]   Initiate breach sequence', 'success');
+        addLog('  hack                    Initiate satellite hacking automation', 'success');
         addLog('  scan                    Global SIGINT discovery', 'success');
         addLog('  ls                      List directory contents');
         addLog('  cd [dir]                Change directory');
         addLog('  cat [file]              Read file content');
         addLog('  clear                   Clear terminal history');
         addLog('  whoami                  Display current user info');
+        break;
+
+      case 'hack':
+        setHacking(true);
+        addLog('>> SATELLITE HACKING SEQUENCE INITIALIZED. Press "X" to terminate.', 'warning');
         break;
 
       case 'crack':

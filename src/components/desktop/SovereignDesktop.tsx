@@ -22,12 +22,13 @@ import {
   Cpu,
   Lock,
   Zap,
-  Scan
+  Scan,
+  Radio
 } from 'lucide-react';
 
 const SovereignDesktop = () => {
   const { windows, openWindow } = useWindowManager();
-  const { traceLevel } = useTerminal();
+  const { traceLevel, setHacking } = useTerminal();
   const [isBooting, setIsBooting] = useState(true);
   const [bootStep, setBootStep] = useState(0);
   const [time, setTime] = useState('');
@@ -64,13 +65,14 @@ const SovereignDesktop = () => {
     };
   }, []);
 
-  const icons: { id: AppId; icon: any; label: string }[] = [
+  const icons: { id: AppId | 'hack'; icon: any; label: string }[] = [
     { id: 'terminal', icon: TerminalIcon, label: 'Terminal' },
     { id: 'camera', icon: Camera, label: 'CCTV' },
     { id: 'wifi', icon: Wifi, label: 'WiFi Sniffer' },
     { id: 'network', icon: Share2, label: 'Net Map' },
     { id: 'cracker', icon: Shield, label: 'Hydra' },
     { id: 'map', icon: Map, label: 'Dubai Map' },
+    { id: 'hack', icon: Radio, label: 'SAT HACK' },
   ];
 
   if (isBooting) {
@@ -110,13 +112,20 @@ const SovereignDesktop = () => {
         {icons.map((item) => (
           <button
             key={item.id}
-            onClick={() => openWindow(item.id)}
+            onClick={() => {
+              if (item.id === 'hack') {
+                openWindow('terminal');
+                setHacking(true);
+              } else {
+                openWindow(item.id);
+              }
+            }}
             className="group flex flex-col items-center gap-1 w-24 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer pointer-events-auto"
           >
-            <div className="w-14 h-14 flex items-center justify-center rounded-2xl bg-black/60 border border-white/10 group-hover:border-neon-cyan/50 group-hover:shadow-[0_0_20px_rgba(0,212,229,0.2)] transition-all">
-              <item.icon className="text-zinc-500 group-hover:text-neon-cyan transition-colors" size={28} />
+            <div className={`w-14 h-14 flex items-center justify-center rounded-2xl bg-black/60 border border-white/10 group-hover:border-neon-cyan/50 group-hover:shadow-[0_0_20px_rgba(0,212,229,0.2)] transition-all ${item.id === 'hack' ? 'group-hover:border-neon-orange group-hover:shadow-[0_0_20px_rgba(255,165,0,0.2)]' : ''}`}>
+              <item.icon className={`text-zinc-500 group-hover:text-neon-cyan transition-colors ${item.id === 'hack' ? 'group-hover:text-neon-orange' : ''}`} size={28} />
             </div>
-            <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black group-hover:text-neon-cyan transition-colors mt-1">
+            <span className={`text-[10px] text-zinc-500 uppercase tracking-widest font-black group-hover:text-neon-cyan transition-colors mt-1 ${item.id === 'hack' ? 'group-hover:text-neon-orange' : ''}`}>
               {item.label}
             </span>
           </button>
