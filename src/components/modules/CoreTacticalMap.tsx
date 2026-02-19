@@ -58,8 +58,8 @@ interface EntityData {
 const generateEntity = (id: number, type: EntityType): EntityData => {
   const pos: [number, number, number] = [(Math.random() - 0.5) * 1800, 0, (Math.random() - 0.5) * 1800];
   const details: EntityData['details'] = { 
-    lat: (25.2048 + pos[0] / 10000).toFixed(6),
-    lng: (55.2708 + pos[2] / 10000).toFixed(6),
+    lat: (40.7128 + pos[0] / 10000).toFixed(6),
+    lng: (-74.0060 + pos[2] / 10000).toFixed(6),
   };
 
   if (type === 'AGENT') {
@@ -68,16 +68,16 @@ const generateEntity = (id: number, type: EntityType): EntityData => {
     details.imei = `3567${id}0098`;
     details.os = 'iOS 17.4';
   } else if (type === 'WIFI') {
-    details.ssid = `DXB_VIP_NET_${id}`;
+    details.ssid = `GRID_VIRTUAL_NET_${id}`;
     details.mac = `00:E0:4C:${id.toString(16).toUpperCase()}`;
     details.security = 'WPA3-ENT';
   } else if (type === 'VEHICLE') {
-    details.plate = `K-100${id}`;
+    details.plate = `X-990${id}`;
     details.speed = `${80 + (id % 40)} KM/H`;
-    details.model = 'Tesla S';
+    details.model = 'Model Plaid';
   } else if (type === 'SKIMMER') {
     details.intercepts = `${id % 10} Cards`;
-    details.bank = 'EMIRATES_NBD';
+    details.bank = 'GLOBAL_CREDIT_NODE';
   }
 
   return { id: `${type}_${id}`, type, pos, details };
@@ -106,10 +106,10 @@ const EarthSystem = ({ onSelectSat }: { onSelectSat: (city: string) => void }) =
         <sphereGeometry args={[10, 64, 64]} />
         <meshStandardMaterial map={cloudsMap} transparent opacity={0.4} blending={THREE.AdditiveBlending} />
       </mesh>
-      <OrbitalSatellite label="KH-11 [DUBAI]" orbitRadius={14} speed={0.2} offset={0} onHack={() => onSelectSat('DUBAI')} />
+      <OrbitalSatellite label="CORE-GRID [UPLINK]" orbitRadius={14} speed={0.2} offset={0} onHack={() => onSelectSat('CORE-GRID')} />
       <OrbitalSatellite label="SENTINEL [NYC]" orbitRadius={16} speed={0.15} offset={2} onHack={() => onSelectSat('NYC')} />
-      <OrbitalSatellite label="FALCON [ABU DHABI]" orbitRadius={13} speed={0.25} offset={4} onHack={() => onSelectSat('ABU_DHABI')} />
-      <OrbitalSatellite label="ODIN [LONDON]" orbitRadius={15} speed={0.18} offset={1} onHack={() => onSelectSat('LONDON')} />
+      <OrbitalSatellite label="ARCHON [SINGAPORE]" orbitRadius={13} speed={0.25} offset={4} onHack={() => onSelectSat('SINGAPORE')} />
+      <OrbitalSatellite label="VALKYRIE [LONDON]" orbitRadius={15} speed={0.18} offset={1} onHack={() => onSelectSat('LONDON')} />
       <OrbitalSatellite label="Q-STAR [NEOM]" orbitRadius={17} speed={0.12} offset={5} onHack={() => onSelectSat('NEOM')} />
     </group>
   );
@@ -227,7 +227,7 @@ const IntelligenceSidebar = ({ target, onClose }: { target: EntityData, onClose:
               </div>
               <div className="bg-zinc-900/80 p-4 border border-white/10 text-[10px] space-y-2">
                 <div className="text-neon-cyan font-black uppercase">In-Car Intercept</div>
-                <div className="text-white/60">Bluetooth: Active {" // "} Route: {parseFloat(target.details.lat) > 25.2 ? 'Downtown' : 'Marina'}</div>
+                <div className="text-white/60">Bluetooth: Active {" // "} Route: {parseFloat(target.details.lat) > 40.7 ? 'Downtown' : 'Midtown'}</div>
               </div>
             </div>
           )}
@@ -276,7 +276,7 @@ const IntelligenceSidebar = ({ target, onClose }: { target: EntityData, onClose:
                 <div className="text-[10px] text-neon-cyan font-black uppercase flex items-center gap-2"><Zap size={12} /> Live_Telemetry</div>
                 <div className="space-y-1 text-[9px] text-white/60">
                   <div className="flex justify-between"><span>Power Consumption</span><span>2.4 MW</span></div>
-                  <div className="flex justify-between"><span>Occupancy Est.</span><span>{target.id === 'BURJ_KHALIFA' ? '12,400' : '840'}</span></div>
+                  <div className="flex justify-between"><span>Occupancy Est.</span><span>{target.id === 'CORE_TOWER' ? '12,400' : '840'}</span></div>
                   <div className="flex justify-between"><span>HVAC System</span><span>{target.type === 'VIP_TARGET' ? 'CRITICAL' : 'OPTIMAL'}</span></div>
                 </div>
               </div>
@@ -341,38 +341,38 @@ const EntityNode = ({ data, onSelect }: { data: EntityData, onSelect: (e: Entity
 };
 
 // --- LANDMARKS ---
-const BurjKhalifa = ({ onSelect }: { onSelect: (e: EntityData) => void }) => (
-  <group position={[0, 0, 0]} onClick={() => onSelect({ id: 'BURJ_KHALIFA', type: 'STRUCTURE', pos: [0, 0, 0], details: { lat: '25.1972', lng: '55.2744' } })}>
+const CoreTower = ({ onSelect }: { onSelect: (e: EntityData) => void }) => (
+  <group position={[0, 0, 0]} onClick={() => onSelect({ id: 'CORE_TOWER', type: 'STRUCTURE', pos: [0, 0, 0], details: { lat: '40.7128', lng: '-74.0060' } })}>
     <mesh position={[0, 40, 0]}><cylinderGeometry args={[2, 6, 80, 4]} /><meshStandardMaterial color={COLORS.cyan} wireframe emissive={COLORS.cyan} emissiveIntensity={0.5} /></mesh>
     <mesh position={[0, 100, 0]}><cylinderGeometry args={[0.5, 2, 40, 4]} /><meshStandardMaterial color={COLORS.cyan} wireframe emissive={COLORS.cyan} emissiveIntensity={0.8} /></mesh>
-    <group position={[0, 110, 0]} onClick={(e) => { e.stopPropagation(); onSelect({ id: 'ABHED_ZONE_154', type: 'VIP_TARGET', pos: [0, 110, 0], details: { lat: '25.1972', lng: '55.2744' } }); }}>
+    <group position={[0, 110, 0]} onClick={(e) => { e.stopPropagation(); onSelect({ id: 'ABHED_ZONE_CORE', type: 'VIP_TARGET', pos: [0, 110, 0], details: { lat: '40.7128', lng: '-74.0060' } }); }}>
       <mesh><cylinderGeometry args={[3, 3, 2, 16]} /><meshStandardMaterial color={COLORS.gold} emissive={COLORS.gold} emissiveIntensity={3} /></mesh>
-      <Html position={[10, 0, 0]} center><div className="text-[10px] text-gold font-black bg-black/95 px-2 border-2 border-gold whitespace-nowrap shadow-[0_0_20px_rgba(255,215,0,0.8)] animate-pulse cursor-pointer">154TH_FLOOR // ABHED_ZONE</div></Html>
+      <Html position={[10, 0, 0]} center><div className="text-[10px] text-gold font-black bg-black/95 px-2 border-2 border-gold whitespace-nowrap shadow-[0_0_20px_rgba(255,215,0,0.8)] animate-pulse cursor-pointer">FLOOR_MAX // ABHED_ZONE</div></Html>
     </group>
     <mesh position={[0, 145, 0]}><sphereGeometry args={[1, 16, 16]} /><meshBasicMaterial color={COLORS.danger} /><pointLight intensity={10} distance={30} color={COLORS.danger} /></mesh>
   </group>
 );
 
-const BurjAlArab = ({ onSelect }: { onSelect: (e: EntityData) => void }) => (
-  <group position={[-250, 0, 300]} onClick={() => onSelect({ id: 'BURJ_AL_ARAB', type: 'STRUCTURE', pos: [-250, 0, 300], details: { lat: '25.1412', lng: '55.1852' } })}>
+const VoidNode = ({ onSelect }: { onSelect: (e: EntityData) => void }) => (
+  <group position={[-250, 0, 300]} onClick={() => onSelect({ id: 'VOID_NODE', type: 'STRUCTURE', pos: [-250, 0, 300], details: { lat: '40.7412', lng: '-73.9852' } })}>
     <mesh position={[0, 40, 0]}><boxGeometry args={[4, 80, 15]} /><meshStandardMaterial color={COLORS.cyan} wireframe emissive={COLORS.cyan} emissiveIntensity={0.4} /></mesh>
     <mesh position={[15, 40, 0]} rotation={[0, 0, -0.2]}><planeGeometry args={[40, 70]} /><meshStandardMaterial color={COLORS.cyan} wireframe side={THREE.DoubleSide} transparent opacity={0.3} /></mesh>
     <mesh position={[-5, 60, 0]}><cylinderGeometry args={[8, 8, 1, 16]} /><meshStandardMaterial color={COLORS.cyan} wireframe /></mesh>
-    <Html position={[0, 85, 0]} center><div className="text-[10px] text-neon-cyan font-black bg-black/90 px-2 border border-neon-cyan whitespace-nowrap uppercase">BURJ_AL_ARAB // SECTOR_JUMEIRAH</div></Html>
+    <Html position={[0, 85, 0]} center><div className="text-[10px] text-neon-cyan font-black bg-black/90 px-2 border border-neon-cyan whitespace-nowrap uppercase">VOID_NODE // SECTOR_J</div></Html>
   </group>
 );
 
-const BankOfEmirates = ({ onSelect }: { onSelect: (e: EntityData) => void }) => (
-  <group position={[200, 0, -150]} onClick={() => onSelect({ id: 'BANK_OF_EMIRATES', type: 'STRUCTURE', pos: [200, 0, -150], details: { lat: '25.2532', lng: '55.3344' } })}>
+const GlobalBank = ({ onSelect }: { onSelect: (e: EntityData) => void }) => (
+  <group position={[200, 0, -150]} onClick={() => onSelect({ id: 'GLOBAL_BANK', type: 'STRUCTURE', pos: [200, 0, -150], details: { lat: '40.7532', lng: '-73.9344' } })}>
     <mesh position={[-10, 30, 0]}><boxGeometry args={[15, 60, 15]} /><meshStandardMaterial color={COLORS.gold} wireframe emissive={COLORS.gold} emissiveIntensity={0.3} /></mesh>
     <mesh position={[10, 30, 0]}><boxGeometry args={[15, 60, 15]} /><meshStandardMaterial color={COLORS.gold} wireframe emissive={COLORS.gold} emissiveIntensity={0.3} /></mesh>
     <mesh position={[0, 50, 0]}><boxGeometry args={[35, 10, 15]} /><meshStandardMaterial color={COLORS.gold} wireframe /></mesh>
-    <Html position={[0, 70, 0]} center><div className="text-[10px] text-gold font-black bg-black/95 px-2 border border-gold whitespace-nowrap uppercase tracking-tighter">BANK_OF_EMIRATES // HQ_NODE</div></Html>
+    <Html position={[0, 70, 0]} center><div className="text-[10px] text-gold font-black bg-black/95 px-2 border border-gold whitespace-nowrap uppercase tracking-tighter">GLOBAL_BANK // HQ_NODE</div></Html>
   </group>
 );
 
 // --- RECON ENGINE ---
-export const DubaiTacticalMap = () => {
+export const CoreTacticalMap = () => {
   const { focusWindow, updateWindow } = useWindowManager();
   const { addLog } = useTerminal();
   const [view, setView] = useState('ORBIT');
@@ -422,9 +422,9 @@ export const DubaiTacticalMap = () => {
             <group>
               <gridHelper args={[6000, 120, COLORS.cyan, '#020202']} position={[0, -0.4, 0]} />
               <gridHelper args={[6000, 30, COLORS.blue, '#010101']} position={[0, -0.45, 0]} />
-              <BurjKhalifa onSelect={handleSelect} />
-              <BurjAlArab onSelect={handleSelect} />
-              <BankOfEmirates onSelect={handleSelect} />
+              <CoreTower onSelect={handleSelect} />
+              <VoidNode onSelect={handleSelect} />
+              <GlobalBank onSelect={handleSelect} />
               {entities.map((e) => <EntityNode key={e.id} data={e} onSelect={handleSelect} />)}
             </group>
           )}

@@ -22,53 +22,112 @@ export const Terminal = () => {
   useEffect(() => {
     if (!isHacking) return;
 
+    let isMounted = true;
     let step = 0;
-    const interval = setInterval(() => {
-      const logs = [
-        { text: ">> INITIATING SATELLITE BREACH: AL-QURAIN_SAT_01", type: "warning" as const },
-        { text: "[+] FETCHING TLE DATA FROM NORAD... SUCCESS", type: "success" as const },
-        { text: "[*] CALCULATING ORBITAL MECHANICS: VEL=7.6km/s ALT=358km", type: "info" as const },
-        { text: "[*] ESTIMATING DOPPLER SHIFT: +4.2kHz... LOCKING ON CARRIER", type: "info" as const },
-        { text: ">> HANDSHAKE: GS_DUBAI_CENTRAL -> AQ_SAT_01", type: "warning" as const },
-        { text: "[+] INJECTING AES-256 BYPASS (MAN-IN-THE-MIDDLE)...", type: "warning" as const },
-        { text: "[+] UPLINK SYNC: 14.2 GHz... BANDWIDTH OPTIMIZED", type: "success" as const },
-        { text: "[*] TELEMETRY PACKET INTERCEPTED: BAT=82% TEMP=14C", type: "info" as const },
-        { text: ">> EXPLOITING CVE-2025-8821 (GND_SYSTEM_VULNERABILITY)", type: "error" as const },
-        { text: "[+] BYPASSING KERNEL AUTHENTICATION... [##########] 100%", type: "success" as const },
-        { text: ">> ACCESS GRANTED: COMMAND_BUFFER_R/W", type: "success" as const },
-        { text: "[!] OVERRIDING ATTITUDE CONTROL... ADJUSTING YAW: +2.5 deg", type: "warning" as const },
-        { text: "[*] DOWNLOADING CLASSIFIED ENCRYPTED_MAP_DATA.pkg...", type: "info" as const },
-        { text: "[+] EXFILTRATING... PACKET 102/4482 [####------]", type: "info" as const },
-        { text: "[+] EXFILTRATING... PACKET 450/4482 [#####-----]", type: "info" as const },
-        { text: "[+] EXFILTRATING... PACKET 980/4482 [######----]", type: "info" as const },
-        { text: "[!] TRACE DETECTION TRIGGERED: DISCONNECT ADVISED", type: "error" as const },
-        { text: "[+] EXFILTRATING... PACKET 1420/4482 [#######---]", type: "info" as const },
-        { text: "[+] EXFILTRATING... PACKET 1980/4482 [########--]", type: "info" as const },
-        { text: ">> INJECTING GHOST_ROOTKIT into SAT_OS_v4.2", type: "warning" as const },
-        { text: "[SUCCESS] PERSISTENCE ESTABLISHED. SAT_LINK_HIDDEN", type: "success" as const },
-      ];
+    
+    const phases = [
+      { name: 'INITIALIZING', weight: 10, logs: [
+        { text: ">> BOOTING SAT-LINK MODULE v4.2.0...", type: "warning" },
+        { text: "[*] WARMING UP RF FRONT-END...", type: "info" },
+        { text: "[*] TUNING TO Ka-BAND FREQUENCIES...", type: "info" },
+        { text: "[+] GLOBAL SIGINT ENGINE: ONLINE", type: "success" },
+        { text: "[*] SEARCHING FOR OVERHEAD ASSETS...", type: "info" },
+        { text: "[!] ASSET FOUND: AL-QURAIN_SAT_01 (ID: 44382)", type: "warning" },
+        { text: "[+] FETCHING TLE DATA FROM SPACE-TRACK... SUCCESS", type: "success" },
+      ]},
+      { name: 'HANDSHAKE', weight: 15, logs: [
+        { text: "[*] CALCULATING DOPPLER COMPENSATION...", type: "info" },
+        { text: "[*] ORBITAL PARAMETERS: ALT=357.8km VEL=7.66km/s", type: "info" },
+        { text: ">> INITIATING CARRIER LOCK... [0%]", type: "warning" },
+        { text: ">> INITIATING CARRIER LOCK... [42%]", type: "warning" },
+        { text: ">> INITIATING CARRIER LOCK... [89%]", type: "warning" },
+        { text: "[+] CARRIER LOCK ESTABLISHED @ 14.225 GHz", type: "success" },
+        { text: ">> HANDSHAKE: GND-STATION-7 -> AQ_SAT_01", type: "warning" },
+        { text: "[*] NEGOTIATING RSA-4096 ENCRYPTED TUNNEL...", type: "info" },
+        { text: "[!] AUTHENTICATION CHALLENGE RECEIVED", type: "error" },
+      ]},
+      { name: 'EXPLOITATION', weight: 20, logs: [
+        { text: ">> ATTEMPTING ZERO-DAY BYPASS (CVE-2026-9912)...", type: "warning" },
+        { text: "[*] INJECTING BUFFER OVERFLOW PAYLOAD...", type: "info" },
+        { text: "[*] TARGETING SAT_OS KERNEL SPACE...", type: "info" },
+        { text: "[+] HEAP SPRAY SUCCESSFUL. REDIRECTING EXECUTION...", type: "success" },
+        { text: ">> GAINING ROOT PRIVILEGES... [##########] 100%", type: "success" },
+        { text: "[!] SYSTEM WARNING: ATTITUDE CONTROL NOMINAL", type: "warning" },
+        { text: "[*] DISABLING TELEMETRY LOGGING...", type: "info" },
+        { text: "[+] LOGS REDIRECTED TO /dev/null", type: "success" },
+        { text: ">> DEPLOYING PERSISTENT BACKDOOR...", type: "warning" },
+      ]},
+      { name: 'EXFILTRATION', weight: 1000, logs: [
+        { text: "[*] SCANNING ONBOARD MEMORY BANKS...", type: "info" },
+        { text: "[+] FOUND: CLASSIFIED_COMMS_ARCHIVE.tar.gz", type: "success" },
+        { text: ">> INITIATING HIGH-SPEED DOWNLINK...", type: "warning" },
+        { text: "[+] EXFILTRATING... PKT_{RAND} [########--] 82%", type: "info" },
+        { text: "[*] SIGNAL NOISE RATIO: {SNR}dB", type: "info" },
+        { text: "[!] TRACE DETECTION: LOW RISK", type: "success" },
+        { text: "[+] EXFILTRATING... PKT_{RAND} [#########-] 91%", type: "info" },
+        { text: "[!] TRACE DETECTION: MODERATE RISK", type: "warning" },
+        { text: "[*] ROTATING PROXY SAT-LINK...", type: "info" },
+        { text: "[+] EXFILTRATING... PKT_{RAND} [##########] 100%", type: "success" },
+        { text: "[+] DOWNLOAD COMPLETE: 14.2 GB SECURED", type: "success" },
+        { text: ">> SCANNING NEXT TARGET SECTOR...", type: "warning" },
+      ]}
+    ];
 
-      const log = logs[step % logs.length];
-      addLog(log.text, log.type);
-      
-      if (step % 5 === 0) incrementTrace(2);
-      
-      step++;
-    }, 1200);
+    const runHacking = async () => {
+      let currentPhaseIdx = 0;
+      let logIdx = 0;
+
+      while (isMounted && isHacking) {
+        const currentPhase = phases[currentPhaseIdx];
+        let log = currentPhase.logs[logIdx];
+
+        // Randomize some log content
+        let logText = log.text
+          .replace('{RAND}', Math.floor(Math.random() * 9999).toString())
+          .replace('{SNR}', (Math.random() * 10 + 5).toFixed(2));
+
+        addLog(logText, log.type as any);
+
+        if (step % 4 === 0) incrementTrace(1);
+
+        logIdx++;
+        step++;
+
+        // Advance phase
+        if (logIdx >= currentPhase.logs.length) {
+          if (currentPhaseIdx < phases.length - 1) {
+            currentPhaseIdx++;
+            logIdx = 0;
+            // Longer delay between phases
+            await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
+          } else {
+            // Loop the last phase with randomized PKTs
+            logIdx = currentPhase.logs.length - 4; // Stay in exfiltration loop
+          }
+        }
+
+        // Variable delay
+        const baseDelay = currentPhaseIdx === 0 ? 1500 : 800;
+        const delay = baseDelay + Math.random() * 1500;
+        await new Promise(r => setTimeout(r, delay));
+      }
+    };
+
+    runHacking();
 
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === 'x' || e.key === 'X') {
         e.preventDefault();
         setHacking(false);
-        addLog(">> HACKING SEQUENCE TERMINATED BY USER.", "error");
-        clearInterval(interval);
+        addLog(">> CONNECTION SEVERED. ENCRYPTION KEYS PURGED.", "error");
+        isMounted = false;
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
 
     return () => {
-      clearInterval(interval);
+      isMounted = false;
       window.removeEventListener('keydown', handleKeyPress);
     };
   }, [isHacking]);
@@ -182,7 +241,7 @@ export const Terminal = () => {
       case 'scan':
         addLog('INITIALIZING GLOBAL SIGINT...', 'warning');
         setTimeout(() => {
-          addLog('FOUND: DUBAI_MALL_GUEST (Open)', 'success');
+          addLog('FOUND: GRID_NODE_882 (Open)', 'success');
           addLog('FOUND: NBD_SECURE_NET (WPA3)', 'error');
           addLog('FOUND: PALM_RES_09 (Weak)', 'warning');
           openWindow('wifi');
@@ -190,7 +249,7 @@ export const Terminal = () => {
         break;
 
       case 'whoami':
-        addLog('ghost@dubai-grid-v8');
+        addLog('ghost@core-grid-v8');
         break;
 
       default:

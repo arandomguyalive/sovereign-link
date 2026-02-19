@@ -9,7 +9,7 @@ import { CameraFeed } from '@/components/modules/CameraFeed';
 import { WiFiSniffer } from '@/components/modules/WiFiSniffer';
 import { HydraCracker } from '@/components/modules/HydraCracker';
 import { NetworkMap } from '@/components/modules/NetworkMap';
-import { DubaiTacticalMap } from '@/components/modules/DubaiTacticalMap';
+import { CoreTacticalMap } from '@/components/modules/CoreTacticalMap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Terminal as TerminalIcon, 
@@ -71,7 +71,7 @@ const SovereignDesktop = () => {
     { id: 'wifi', icon: Wifi, label: 'WiFi Sniffer' },
     { id: 'network', icon: Share2, label: 'Net Map' },
     { id: 'cracker', icon: Shield, label: 'Hydra' },
-    { id: 'map', icon: Map, label: 'Dubai Map' },
+    { id: 'map', icon: Map, label: 'Tactical Map' },
     { id: 'hack', icon: Radio, label: 'SAT HACK' },
   ];
 
@@ -142,7 +142,7 @@ const SovereignDesktop = () => {
             {win.id === 'wifi' && <WiFiSniffer />}
             {win.id === 'cracker' && <HydraCracker />}
             {win.id === 'network' && <NetworkMap />}
-            {win.id === 'map' && <DubaiTacticalMap />}
+            {win.id === 'map' && <CoreTacticalMap />}
           </Window>
         );
       })}

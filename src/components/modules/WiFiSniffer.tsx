@@ -14,11 +14,11 @@ interface Network {
 }
 
 const REGIONS = {
-  DUBAI: [
-    { ssid: 'Etisalat_5G_VIP', signal: 92, security: 'WPA3', channel: 11, clients: 4 },
-    { ssid: 'Burj_Khalifa_Guest', signal: 85, security: 'OPEN', channel: 6, clients: 124 },
-    { ssid: 'Dubai_Police_Secure', signal: 40, security: 'WPA2-ENT', channel: 1, clients: 0 },
-    { ssid: 'Palm_Jumeirah_Res', signal: 78, security: 'WPA2', channel: 36, clients: 8 },
+  'CORE-GRID': [
+    { ssid: 'SOVEREIGN_VIRTUAL_01', signal: 92, security: 'WPA3', channel: 11, clients: 4 },
+    { ssid: 'PUBLIC_ACCESS_NODE', signal: 85, security: 'OPEN', channel: 6, clients: 124 },
+    { ssid: 'SECURE_POLICE_NET', signal: 40, security: 'WPA2-ENT', channel: 1, clients: 0 },
+    { ssid: 'GRID_RESIDENCE_ALPHA', signal: 78, security: 'WPA2', channel: 36, clients: 8 },
   ],
   NYC: [
     { ssid: 'LinkNYC_Free_Wi-Fi', signal: 95, security: 'OPEN', channel: 6, clients: 450 },
@@ -39,7 +39,7 @@ const REGIONS = {
 };
 
 export const WiFiSniffer = () => {
-  const [region, setRegion] = useState<'DUBAI' | 'NYC' | 'LDN' | 'MOSCOW'>('DUBAI');
+  const [region, setRegion] = useState<'CORE-GRID' | 'NYC' | 'LDN' | 'MOSCOW'>('CORE-GRID');
   const [networks, setNetworks] = useState<Network[]>([]);
   const [scanning, setScanning] = useState(true);
 
